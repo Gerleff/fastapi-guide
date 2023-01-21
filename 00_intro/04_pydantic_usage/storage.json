@@ -1,0 +1,40 @@
+{
+    "companies": [
+        {
+            "id": 1,
+            "name": "AirWonder"
+        }
+    ],
+    "trips": [
+        {
+            "id": 1,
+            "company": {
+                "id": 1,
+                "name": "AirWonder"
+            },
+            "plane": "WonderPlane",
+            "town_from": "Dubai",
+            "town_to": "Saratov",
+            "time_out": "2023-01-22T00:48:31.519504",
+            "time_in": "2023-01-22T03:48:31.519535"
+        }
+    ],
+    "pass_in_trip": [
+        {
+            "id": 1,
+            "place": "A21",
+            "trip": {
+                "id": 1,
+                "company": {
+                    "id": 1,
+                    "name": "AirWonder"
+                },
+                "plane": "WonderPlane",
+                "town_from": "Dubai",
+                "town_to": "Saratov",
+                "time_out": "2023-01-22T00:48:31.519504",
+                "time_in": "2023-01-22T03:48:31.519535"
+            }
+        }
+    ]
+}
