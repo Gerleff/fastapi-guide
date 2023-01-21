@@ -1,4 +1,6 @@
-from pydantic import BaseModel, Field
+import operator
+
+from pydantic import BaseModel, Field, validator
 from pydantic.generics import GenericModel
 from typing import TypeVar, Generic, Iterator
 from schemas import CompanyOutputSchema, TripOutputSchema, TripForPassengerOutputSchema
@@ -9,7 +11,15 @@ SchemaToStoreVar = TypeVar("SchemaToStoreVar", bound=BaseModel)
 class GenericStorageList(GenericModel, Generic[SchemaToStoreVar]):
     __root__: list[SchemaToStoreVar] = Field(default_factory=list)
 
-    # ToDO validate each __root__ elem
+    @validator("__root__", each_item=True)
+    def check_id(cls, value: SchemaToStoreVar):
+        if value.id is None:
+            value.id = 0
+        return value
+
+    @validator("__root__")
+    def check_root(cls, value: list[SchemaToStoreVar]):
+        return sorted(value, key=operator.attrgetter("id"))
 
     def __iter__(self) -> Iterator[SchemaToStoreVar]:
         return self.__root__.__iter__()
@@ -30,6 +40,13 @@ class GenericStorageList(GenericModel, Generic[SchemaToStoreVar]):
             value.id = 1
         self.__root__.append(value)
         return value
+
+    def update(self, _id: int, value: SchemaToStoreVar) -> SchemaToStoreVar:
+        for elem_index in range(len(self.__root__)):
+            if self.__root__[elem_index].id == _id:
+                value.id = _id
+                self.__root__[elem_index] = value
+                return value
 
     def delete_by_id(self, _id: int) -> bool:
         for elem_index in range(len(self.__root__)):

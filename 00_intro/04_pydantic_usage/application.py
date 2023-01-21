@@ -1,5 +1,3 @@
-from datetime import datetime, timedelta
-
 from fastapi import FastAPI, Depends, HTTPException
 import uvicorn
 from starlette import status
@@ -34,6 +32,7 @@ def get_example_storage(request: Request) -> Storage:
     return request.app.state.storage
 
 
+# For PATCH endpoints it is required to define separated schemas with "type | None" type-hint
 # Companies
 @app.get("/companies", response_model=list[CompanyOutputSchema], tags=["Company"])
 async def get_companies(storage: Storage = Depends(get_example_storage)):

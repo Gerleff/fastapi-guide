@@ -1,5 +1,5 @@
 from datetime import datetime
-from pydantic import BaseModel, validator, constr, root_validator
+from pydantic import BaseModel, validator, constr, root_validator, conint
 
 
 # Input
@@ -8,7 +8,7 @@ class CompanyInputSchema(BaseModel):
 
 
 class TripInputSchema(BaseModel):
-    company: int
+    company: conint(gt=0)
     plane: constr(min_length=1, max_length=64)
     town_from: constr(min_length=1, max_length=64)
     town_to: constr(min_length=1, max_length=64)
@@ -28,7 +28,7 @@ class TripInputSchema(BaseModel):
 
 class TripForPassengerInputSchema(BaseModel):
     place: constr(regex=r"^[A-F]\d\d$")
-    trip: int
+    trip: conint(gt=0)
 
 
 # Output
