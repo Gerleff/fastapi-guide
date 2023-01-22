@@ -1,6 +1,6 @@
 import operator
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, validator, root_validator
 from pydantic.generics import GenericModel
 from typing import TypeVar, Generic, Iterator
 from schemas import CompanyOutputSchema, TripOutputSchema, TripForPassengerOutputSchema
@@ -13,12 +13,14 @@ class GenericStorageList(GenericModel, Generic[SchemaToStoreVar]):
 
     @validator("__root__", each_item=True)
     def check_id(cls, value: SchemaToStoreVar):
+        """To validate each element of list separately"""
         if value.id is None:
             value.id = 0
         return value
 
     @validator("__root__")
     def check_root(cls, value: list[SchemaToStoreVar]):
+        """To validate whole list as united value"""
         return sorted(value, key=operator.attrgetter("id"))
 
     def __iter__(self) -> Iterator[SchemaToStoreVar]:
@@ -41,7 +43,7 @@ class GenericStorageList(GenericModel, Generic[SchemaToStoreVar]):
         self.__root__.append(value)
         return value
 
-    def update(self, _id: int, value: SchemaToStoreVar) -> SchemaToStoreVar:
+    def update_by_id(self, _id: int, value: SchemaToStoreVar) -> SchemaToStoreVar | None:
         for elem_index in range(len(self.__root__)):
             if self.__root__[elem_index].id == _id:
                 value.id = _id
@@ -60,3 +62,14 @@ class Storage(BaseModel):
     companies: GenericStorageList[CompanyOutputSchema]
     trips: GenericStorageList[TripOutputSchema]
     pass_in_trip: GenericStorageList[TripForPassengerOutputSchema]
+
+    # Just to show usage of flag "pre"
+    @root_validator(pre=True)
+    def show_root_validator_with_pre_true(cls, values):
+        print(values)
+        return values
+
+    @root_validator()
+    def show_root_validator_with_pre_false(cls, values):
+        print(values)
+        return values

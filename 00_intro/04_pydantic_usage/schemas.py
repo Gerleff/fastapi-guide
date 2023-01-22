@@ -1,13 +1,18 @@
+"""Schemas are used to define and validate incoming and outgoing data, for which service is awared of."""
 from datetime import datetime
-from pydantic import BaseModel, validator, constr, root_validator, conint
+from pydantic import BaseModel, validator, constr, root_validator, conint, Extra
 
 
-# Input
+# Input schemas.
 class CompanyInputSchema(BaseModel):
     name: constr(min_length=1, max_length=64)
 
+    class Config:
+        """More https://docs.pydantic.dev/usage/model_config/"""
+        extra = Extra.forbid
 
-class TripInputSchema(BaseModel):
+
+class TripInputSchema(BaseModel, extra=Extra.forbid):
     company: conint(gt=0)
     plane: constr(min_length=1, max_length=64)
     town_from: constr(min_length=1, max_length=64)
@@ -15,7 +20,8 @@ class TripInputSchema(BaseModel):
     time_out: datetime
     time_in: datetime
 
-    @root_validator(pre=True)
+    # Any error raised during validation normally will cause RequestValidationError end 422 Response with link to field
+    @root_validator()
     def check_town_pre(cls, values: dict):
         assert values["town_to"] != values["town_from"], "Trips to the same town shouldn't be planned"
         return values
@@ -31,7 +37,7 @@ class TripForPassengerInputSchema(BaseModel):
     trip: conint(gt=0)
 
 
-# Output
+# Output schemas. Also used to store in pythonic storage
 class CompanyOutputSchema(BaseModel):
     id: int | None
     name: str
