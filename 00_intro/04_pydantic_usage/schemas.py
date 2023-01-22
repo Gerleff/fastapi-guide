@@ -1,6 +1,14 @@
 """Schemas are used to define and validate incoming and outgoing data, for which service is awared of."""
 from datetime import datetime
+from enum import Enum
+
 from pydantic import BaseModel, validator, constr, root_validator, conint, Extra
+
+
+class PlaneEnum(str, Enum):
+    AIRBUS = "AirBus"
+    BOEING = "Boeing"
+    WONDER_PLANE = "WonderPlane"
 
 
 # Input schemas.
@@ -9,12 +17,13 @@ class CompanyInputSchema(BaseModel):
 
     class Config:
         """More https://docs.pydantic.dev/usage/model_config/"""
+
         extra = Extra.forbid
 
 
 class TripInputSchema(BaseModel, extra=Extra.forbid):
     company: conint(gt=0)
-    plane: constr(min_length=1, max_length=64)
+    plane: PlaneEnum
     town_from: constr(min_length=1, max_length=64)
     town_to: constr(min_length=1, max_length=64)
     time_out: datetime

@@ -26,8 +26,17 @@ class GenericStorageList(GenericModel, Generic[SchemaToStoreVar]):
     def __iter__(self) -> Iterator[SchemaToStoreVar]:
         return self.__root__.__iter__()
 
-    def filter(self):
-        return self.__root__
+    def filter(self, **filter_kwargs):
+        """Simple equality filter implementation"""
+        return [
+            elem
+            for elem in self
+            if all(
+                tuple(
+                    getattr(elem, field, None) == value for field, value in filter_kwargs.items() if value is not None
+                )
+            )
+        ]
 
     def get_by_id(self, _id: int) -> SchemaToStoreVar | None:
         for elem in self:

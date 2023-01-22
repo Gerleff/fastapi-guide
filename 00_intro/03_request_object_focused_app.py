@@ -1,13 +1,155 @@
-from fastapi import FastAPI
+from enum import Enum
+from typing import Literal
+
+from fastapi import FastAPI, Depends
 import uvicorn
+from fastapi.params import Body
+from starlette.requests import Request
 
-app = FastAPI(docs_url="/")
+web_app = FastAPI(docs_url="/")
+
+# Simple middleware example
+# from starlette.types import ASGIApp, Scope, Receive, Send
+# class SimpleMiddleware:
+#     def __init__(self, app: ASGIApp):  # named arg "app" cause of starlette.applications:103
+#         self.app = app
+#
+#     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+#         print(scope, receive, send, sep="\n")
+#
+#         await self.app(scope, receive, send)
+#         return
+#
+#
+# web_app.add_middleware(SimpleMiddleware)
 
 
-@app.get("/ping")
-async def healthcheck():
-    return "pong"
+# Request state example
+# import time
+# @web_app.middleware("http")  # That middleware usage is discouraged
+# async def add_start_time_to_request_state(request: Request, call_next):
+#     request.state.start_time = time.time()
+#     response = await call_next(request)
+#     return response
+
+
+@web_app.on_event("startup")
+def init_simple_storage():
+    web_app.state.mountains = set()
+
+
+def get_mountains_from_state(request: Request):
+    return request.app.state.mountains
+
+
+@web_app.get("/v0/mountains", response_model=list[str], tags=["01_Simple"])
+async def get_mountains(
+    name_starts_with: str = None,
+    name_contains: str = None,
+    limit: int = 10,
+    mountains: set = Depends(get_mountains_from_state),
+):
+    """
+    name_starts_with, name_contains and limit are fastapi.params.Query by default.
+    They have default values, so they are not required to use.
+    Mountains stored in app storage are injected with Depends.
+    """
+    result = list(mountains)
+    if name_starts_with:
+        result[:] = [name for name in result if name.startswith(name_starts_with)]
+    if name_contains:
+        result[:] = [name for name in result if name_contains in name]
+    return result[:limit]
+
+
+@web_app.post("/v0/mountains", response_model=set[str], tags=["01_Simple"])
+async def add_mountain(new_mountain: str, mountains: set = Depends(get_mountains_from_state)):
+    """new_mountain is fastapi.params.Query by default. Let it be for learning purpose"""
+    mountains.add(new_mountain)
+    return mountains
+
+
+@web_app.put("/v0/mountains", response_model=set[str], tags=["01_Simple"])
+async def renew_mountains(new_mountains: set[str], mountains: set = Depends(get_mountains_from_state)):
+    """new_mountains is fastapi.params.Body by default because it is container."""
+    mountains.clear()
+    mountains |= new_mountains
+    return mountains
+
+
+@web_app.patch("/v0/mountains/{name}", response_model=set[str], tags=["01_Simple"])
+async def edit_mountain(
+    name: str,
+    new_name: str = Body(description="Mountain will be renamed, if it exists in database"),
+    mountains: set = Depends(get_mountains_from_state),
+):
+    """name is path variable, new_name is enforced to be fastapi.params.Body"""
+    try:
+        mountains.remove(name)
+    except KeyError:
+        return mountains
+    mountains.add(new_name)
+    return mountains
+
+
+class PaintersEnum(str, Enum):
+    Leonardo_da_Vinci = "Leonardo da Vinci"
+    Vincent_Van_Gogh = "/vincent Van Gogh"
+    Michelangelo = "Michelangelo"
+    Pablo_Picasso = "Pablo Picasso"
+    Rembrandt = "Rembrandt"
+
+
+@web_app.delete(
+    "/v0/mountains/{name}",
+    # Literal doesn't affect OpenApi much
+    response_model=dict[Literal["remainders", "last_words", "painter"], str | list[str]],
+    tags=["01_Simple"],
+)
+async def remove_mountain(
+    name: str,
+    last_words_to_mountain: str = Body(None, example="It will never be forgotten ..."),
+    before_go_was_painted_by: PaintersEnum = Body(
+        None,
+        examples={
+            "He went crazy for it": PaintersEnum.Vincent_Van_Gogh,
+            "It charmed him so nicely": PaintersEnum.Michelangelo,
+        },
+    ),
+    mountains: set = Depends(get_mountains_from_state),
+):
+    """Several fastapi.params.Body make endpoint expect body with several keys, named as args"""
+    mountains.discard(name)
+    return {"remainders": mountains, "last_words": last_words_to_mountain, "painter": before_go_was_painted_by}
+
+
+def filtered_mountains(
+    name_starts_with: str = None,
+    name_contains: str = None,
+    limit: int = 10,
+    mountains: set = Depends(get_mountains_from_state),
+):
+    """Depends func can use the same args as router func"""
+    result = list(mountains)
+    if name_starts_with:
+        result[:] = [name for name in result if name.startswith(name_starts_with)]
+    if name_contains:
+        result[:] = [name for name in result if name_contains in name]
+    return result[:limit]
+
+
+@web_app.get("/v1/mountains/", response_model=set[str], tags=["02_Filter"])
+async def get_mountains_v1(mountains: list = Depends(filtered_mountains)):
+    return mountains
+
+
+@web_app.get("/v1/mountains/count", response_model=int, tags=["02_Filter"])
+async def get_mountains_count_v1(mountains: list = Depends(filtered_mountains)):
+    return len(mountains)
+
+# How do dependencies resolve?
+# Look into fastapi.routing.APIRoute.__init__() and fastapi.dependencies.utils.get_dependants().
 
 
 if __name__ == "__main__":
-    uvicorn.run("__main__:app", host="localhost", port=8000, reload=True)
+    uvicorn.run("__main__:web_app", host="localhost", port=8000, reload=True)

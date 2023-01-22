@@ -12,6 +12,7 @@ from schemas import (
     CompanyInputSchema,
     TripInputSchema,
     TripForPassengerInputSchema,
+    PlaneEnum,
 )
 
 app = FastAPI(docs_url="/", servers=[{"url": settings.ADDRESS, "description": "Local server"}])
@@ -56,8 +57,8 @@ async def delete_company(_id: int, storage: Storage = Depends(get_example_storag
 
 # Trips
 @app.get("/trips", response_model=list[TripOutputSchema], tags=["Trip"])
-async def get_trips(storage: Storage = Depends(get_example_storage)):
-    return storage.trips.filter()
+async def get_trips(plane: PlaneEnum | None = None, storage: Storage = Depends(get_example_storage)):
+    return storage.trips.filter(plane=plane)
 
 
 @app.get("/trips/{_id}", response_model=TripOutputSchema, tags=["Trip"])
