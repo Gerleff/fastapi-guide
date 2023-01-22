@@ -1,5 +1,6 @@
+from collections import defaultdict
 from enum import Enum
-from typing import Literal
+from typing import Literal, Callable, Container, Iterable
 
 from fastapi import FastAPI, Depends
 import uvicorn
@@ -9,19 +10,26 @@ from starlette.requests import Request
 web_app = FastAPI(docs_url="/")
 
 # Simple middleware example
-# from starlette.types import ASGIApp, Scope, Receive, Send
-# class SimpleMiddleware:
-#     def __init__(self, app: ASGIApp):  # named arg "app" cause of starlette.applications:103
-#         self.app = app
-#
-#     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-#         print(scope, receive, send, sep="\n")
-#
-#         await self.app(scope, receive, send)
-#         return
-#
-#
-# web_app.add_middleware(SimpleMiddleware)
+from starlette.types import ASGIApp, Scope, Receive, Send
+
+
+class SimpleMiddleware:
+    def __init__(self, app: ASGIApp):  # named arg "app" cause of starlette.applications:103
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        # print(scope, receive, send, sep="\n")
+        if scope.get("type") == "http":
+            record = f"{scope['method']} {scope['path']}"
+            if scope['query_string']:
+                record += f"?{scope['query_string'].decode('utf-8')}"
+            scope["app"].state.user_history[scope["client"][0]].append(record)
+
+        await self.app(scope, receive, send)
+        return
+
+
+web_app.add_middleware(SimpleMiddleware)
 
 
 # Request state example
@@ -36,6 +44,7 @@ web_app = FastAPI(docs_url="/")
 @web_app.on_event("startup")
 def init_simple_storage():
     web_app.state.mountains = set()
+    web_app.state.user_history = defaultdict(list)
 
 
 def get_mountains_from_state(request: Request):
@@ -83,7 +92,7 @@ async def edit_mountain(
     new_name: str = Body(description="Mountain will be renamed, if it exists in database"),
     mountains: set = Depends(get_mountains_from_state),
 ):
-    """name is path variable, new_name is enforced to be fastapi.params.Body"""
+    """name is fastapi.params.Path variable from url, new_name is enforced to be fastapi.params.Body"""
     try:
         mountains.remove(name)
     except KeyError:
@@ -123,29 +132,72 @@ async def remove_mountain(
     return {"remainders": mountains, "last_words": last_words_to_mountain, "painter": before_go_was_painted_by}
 
 
-def filtered_mountains(
+# Filters
+_filter_func_typing = Callable[[Iterable[str]], list[str]]
+
+
+def create_filter_func(
     name_starts_with: str = None,
     name_contains: str = None,
     limit: int = 10,
-    mountains: set = Depends(get_mountains_from_state),
-):
-    """Depends func can use the same args as router func"""
-    result = list(mountains)
-    if name_starts_with:
-        result[:] = [name for name in result if name.startswith(name_starts_with)]
-    if name_contains:
-        result[:] = [name for name in result if name_contains in name]
-    return result[:limit]
+) -> _filter_func_typing:
+    """
+    Depends func can use the same args as router func
+    This dependancy can be used for any resource
+    """
+
+    def filter_func(query: Iterable[str]) -> list[str]:
+        result = list(query)
+        if name_starts_with:
+            result[:] = [name for name in result if name.startswith(name_starts_with)]
+        if name_contains:
+            result[:] = [name for name in result if name_contains in name]
+        return result[:limit]
+
+    return filter_func
 
 
 @web_app.get("/v1/mountains/", response_model=set[str], tags=["02_Filter"])
-async def get_mountains_v1(mountains: list = Depends(filtered_mountains)):
-    return mountains
+async def get_mountains_v1(
+    mountains: set = Depends(get_mountains_from_state), filter_func: _filter_func_typing = Depends(create_filter_func)
+):
+    return filter_func(mountains)
 
 
 @web_app.get("/v1/mountains/count", response_model=int, tags=["02_Filter"])
-async def get_mountains_count_v1(mountains: list = Depends(filtered_mountains)):
-    return len(mountains)
+async def get_mountains_count_v1(
+    mountains: set = Depends(get_mountains_from_state), filter_func: _filter_func_typing = Depends(create_filter_func)
+):
+    return len(filter_func(mountains))
+
+
+# Pagination
+def get_user_history(request: Request):
+    return request.app.state.user_history[request.scope["client"][0]]
+
+
+def limit_offset_pagination(limit: int = 10, offset: int = 0) -> tuple[int, int]:
+    return offset, offset + limit + 1
+
+
+def page_size_pagination(page: int = 1, page_size: int = 10) -> tuple[int, int]:
+    offset = (page - 1) * page_size
+    return offset, offset + page_size + 1
+
+
+@web_app.get("/v0/history", response_model=list[str], tags=["03_Pagination"])
+async def get_mountains_count_v1(
+    pagination: tuple[int, int] = Depends(limit_offset_pagination), user_history: list[str] = Depends(get_user_history)
+):
+    return user_history[pagination[0]: pagination[1]]
+
+
+@web_app.get("/v1/history", response_model=list[str], tags=["03_Pagination"])
+async def get_mountains_count_v1(
+    pagination: tuple[int, int] = Depends(page_size_pagination), user_history: list[str] = Depends(get_user_history)
+):
+    return user_history[pagination[0]: pagination[1]]
+
 
 # How do dependencies resolve?
 # Look into fastapi.routing.APIRoute.__init__() and fastapi.dependencies.utils.get_dependants().
