@@ -1,18 +1,17 @@
 from collections import defaultdict
 from enum import Enum
-from typing import Literal, Callable, Container, Iterable
+from typing import Literal, Callable, Iterable
 
 from fastapi import FastAPI, Depends
 import uvicorn
 from fastapi.params import Body
 from starlette.requests import Request
+from starlette.types import ASGIApp, Scope, Receive, Send
 
 web_app = FastAPI(docs_url="/")
 
+
 # Simple middleware example
-from starlette.types import ASGIApp, Scope, Receive, Send
-
-
 class SimpleMiddleware:
     def __init__(self, app: ASGIApp):  # named arg "app" cause of starlette.applications:103
         self.app = app
@@ -133,7 +132,8 @@ async def remove_mountain(
 
 
 # Filters
-_filter_func_typing = Callable[[Iterable[str]], list[str]]
+_filter_func_arg_typing = Iterable[str]
+_filter_func_typing = Callable[[_filter_func_arg_typing], list[str]]
 
 
 def create_filter_func(
@@ -146,7 +146,7 @@ def create_filter_func(
     This dependancy can be used for any resource
     """
 
-    def filter_func(query: Iterable[str]) -> list[str]:
+    def filter_func(query: _filter_func_arg_typing) -> list[str]:
         result = list(query)
         if name_starts_with:
             result[:] = [name for name in result if name.startswith(name_starts_with)]
