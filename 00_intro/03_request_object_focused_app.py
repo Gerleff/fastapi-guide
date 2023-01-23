@@ -28,6 +28,7 @@ class SimpleMiddleware:
         return
 
 
+# How middlewares are handled: starlette.applications.Starlette.build_middleware_stack
 web_app.add_middleware(SimpleMiddleware)
 
 

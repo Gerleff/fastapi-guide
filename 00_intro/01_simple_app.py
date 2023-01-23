@@ -1,3 +1,5 @@
+import traceback
+
 from fastapi import FastAPI
 import uvicorn
 
@@ -6,6 +8,7 @@ app = FastAPI(docs_url="/")
 
 @app.get("/ping")
 async def healthcheck():
+    traceback.print_stack()
     return "pong"
 
 
