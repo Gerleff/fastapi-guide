@@ -6,9 +6,15 @@ from fastapi import FastAPI, Depends
 import uvicorn
 from fastapi.params import Body
 from starlette.requests import Request
+from starlette.responses import Response
 from starlette.types import ASGIApp, Scope, Receive, Send
 
-web_app = FastAPI(docs_url="/")
+
+def modify_response_header(response: Response):
+    response.raw_headers.append((b"mountains", b"remember everything"))
+
+
+web_app = FastAPI(docs_url="/", dependencies=[Depends(modify_response_header)])
 
 
 # Simple middleware example
@@ -17,7 +23,6 @@ class SimpleMiddleware:
         self.app = app
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        # print(scope, receive, send, sep="\n")
         if scope.get("type") == "http":
             record = f"{scope['method']} {scope['path']}"
             if scope['query_string']:
