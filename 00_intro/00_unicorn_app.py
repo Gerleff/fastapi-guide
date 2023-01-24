@@ -3,8 +3,10 @@ import traceback
 import uvicorn
 import asyncio
 
+from starlette.types import ASGIApp, Scope, Receive, Send
 
-async def hello_world(scope, receive, send):
+
+async def hello_world(scope: Scope, receive: Receive, send: Send):
     """Simple showcase"""
     event = await receive()
     print(f"{scope = }\n{event = }")
@@ -22,7 +24,7 @@ async def hello_world(scope, receive, send):
     traceback.print_stack()
 
 
-async def slow_body(scope, receive, send):
+async def slow_body(scope: Scope, receive: Receive, send: Send):
     """
     Send a slowly streaming HTTP response back to the client.
     """
@@ -46,11 +48,14 @@ async def slow_body(scope, receive, send):
     })
 
 
-async def app(scope, receive, send):
+async def app(scope: Scope, receive: Receive, send: Send):
     assert scope['type'] == 'http'
     if "slow" in scope["path"]:
         return await slow_body(scope, receive, send)
     return await hello_world(scope, receive, send)
+
+app: ASGIApp
+
 
 if __name__ == "__main__":
     uvicorn.run("__main__:app", host="localhost", port=8000, reload=True)

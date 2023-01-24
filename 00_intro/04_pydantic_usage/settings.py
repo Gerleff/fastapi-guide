@@ -3,6 +3,7 @@ from pydantic import BaseSettings, validator
 
 class Settings(BaseSettings):
     class Config(BaseSettings.Config):
+        env_file = ".env"
         env_prefix = "APP_"
 
     HOST: str = "localhost"
