@@ -1,4 +1,4 @@
-from typing import Callable, Union
+from typing import Callable, Union, Protocol
 
 from fastapi import FastAPI
 import uvicorn
@@ -29,27 +29,44 @@ async def healthcheck():
     return "pong"
 
 
-class ASGIAppInterface:
-    """Common ASGI interface"""
+class ASGIAppProtocol(Protocol):
+    """Common ASGI Protocol"""
+
     def __call__(self, scope: Scope, receive: Receive, send: Send):
         ...
 
 
-class MiddlewareInterface(ASGIAppInterface):
+class WebAppProtocol(ASGIAppProtocol):
+    """
+    On __init__ app must set up middlewares and routes in router
+    On __call__ app must:
+     1) handle request with middlewares,
+     2) define by router, which route to use,
+     3) call route endpoint function and return serialized response
+    """
+
+    middlewares: list["MiddlewareProtocol"]
+    router: "RouterProtocol"
+
+
+class MiddlewareProtocol(ASGIAppProtocol):
     """
     Middlewares behave as singly linked list to be processed before Router
     Place debug breakpoint on the end of fastapi.applications.FastAPI.build_middleware_stack() to inspect
     """
-    app: Union["MiddlewareInterface", "RouterInterface"]
+
+    app: Union["MiddlewareProtocol", "RouterProtocol"] | ASGIAppProtocol
 
 
-class RouterInterface(ASGIAppInterface):
+class RouterProtocol(ASGIAppProtocol):
     """During __call__ it looks for path-matching Route and calls it"""
-    routes: list["RouteInterface"]
+
+    routes: list["RouteProtocol"]
 
 
-class RouteInterface(ASGIAppInterface):
+class RouteProtocol(ASGIAppProtocol):
     """app attribute is async function to handle request, endpoint"""
+
     app: Callable
 
 

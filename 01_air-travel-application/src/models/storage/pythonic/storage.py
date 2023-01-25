@@ -1,11 +1,12 @@
 import operator
 
-from pydantic import BaseModel, Field, validator, root_validator
+from pydantic import BaseModel, Field, validator
+from pydantic.dataclasses import Dataclass
 from pydantic.generics import GenericModel
 from typing import TypeVar, Generic, Iterator
-from src.models.schemas import CompanyOutputSchema, TripOutputSchema, TripForPassengerOutputSchema
+from models.schemas import CompanyOutputSchema, TripOutputSchema, TripForPassengerOutputSchema
 
-SchemaToStoreVar = TypeVar("SchemaToStoreVar", bound=BaseModel)
+SchemaToStoreVar = TypeVar("SchemaToStoreVar", bound=Dataclass)
 
 
 class GenericStorageList(GenericModel, Generic[SchemaToStoreVar]):
@@ -71,14 +72,4 @@ class Storage(BaseModel):
     companies: GenericStorageList[CompanyOutputSchema]
     trips: GenericStorageList[TripOutputSchema]
     pass_in_trip: GenericStorageList[TripForPassengerOutputSchema]
-
-    # Just to show usage of flag "pre"
-    @root_validator(pre=True)
-    def show_root_validator_with_pre_true(cls, values):
-        print(values)
-        return values
-
-    @root_validator()
-    def show_root_validator_with_pre_false(cls, values):
-        print(values)
-        return values
+    users: GenericStorageList[TripForPassengerOutputSchema]

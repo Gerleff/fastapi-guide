@@ -25,7 +25,7 @@ class SimpleMiddleware:
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope.get("type") == "http":
             record = f"{scope['method']} {scope['path']}"
-            if scope['query_string']:
+            if scope["query_string"]:
                 record += f"?{scope['query_string'].decode('utf-8')}"
             scope["app"].state.user_history[scope["client"][0]].append(record)
 
@@ -54,6 +54,11 @@ def init_simple_storage():
 
 def get_mountains_from_state(request: Request):
     return request.app.state.mountains
+
+
+@web_app.get("/ping", response_model=Literal["pong"], tags=["healthcheck"])
+async def healthcheck():
+    return "pong"
 
 
 @web_app.get("/v0/mountains", response_model=list[str], tags=["01_Simple"])
@@ -195,14 +200,14 @@ def page_size_pagination(page: int = 1, page_size: int = 10) -> tuple[int, int]:
 async def get_mountains_count_v1(
     pagination: tuple[int, int] = Depends(limit_offset_pagination), user_history: list[str] = Depends(get_user_history)
 ):
-    return user_history[pagination[0]: pagination[1]]
+    return user_history[pagination[0] : pagination[1]]
 
 
 @web_app.get("/v1/history", response_model=list[str], tags=["03_Pagination"])
 async def get_mountains_count_v1(
     pagination: tuple[int, int] = Depends(page_size_pagination), user_history: list[str] = Depends(get_user_history)
 ):
-    return user_history[pagination[0]: pagination[1]]
+    return user_history[pagination[0] : pagination[1]]
 
 
 # How do dependencies resolve?

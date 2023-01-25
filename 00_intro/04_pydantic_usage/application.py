@@ -3,9 +3,9 @@ import uvicorn
 from starlette import status
 from starlette.requests import Request
 
-from settings import settings
+from src.settings import settings
 from storage import Storage
-from schemas import (
+from src.models.schemas import (
     CompanyOutputSchema,
     TripOutputSchema,
     TripForPassengerOutputSchema,
