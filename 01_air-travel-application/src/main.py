@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 import uvicorn
 
+from models.storage.dependencies import connect_on_startup, disconnect_on_shutdown
 from settings import settings
 from controller.routers import api_routers
 
@@ -10,19 +11,14 @@ for router in api_routers:
     app.include_router(router)
 
 
-# @app.on_event("startup")
-# def init_simple_storage():
-#     app.state.storage = Storage.parse_file("storage.json")
-#
-#
-# @app.on_event("shutdown")
-# def save_simple_storage():
-#     with open("models/storage/pythonic/storage.json", "w") as file:
-#         file.write(app.state.storage.json(indent=4, ensure_ascii=False))
-#
-#
-# def get_example_storage(request: Request) -> Storage:
-#     return request.app.state.storage
+@app.on_event("startup")
+async def init_database_session():
+    await connect_on_startup(app, settings)
+
+
+@app.on_event("shutdown")
+async def close_database_session():
+    await disconnect_on_shutdown(app, settings)
 
 
 if __name__ == "__main__":

@@ -1,7 +1,9 @@
+from controller.dependencies.filter_dep import FilterHandler
 from .interfaces import CRUDInterface
 from typing import NoReturn
 
 from controller.dependencies.pagination import Pagination
+from ..database.models import CompanyModel
 from ..schemas.input import CompanyInputSchema, CompanyUpdateSchema
 from ..schemas.output import CompanyOutputSchema
 
@@ -11,17 +13,17 @@ class CompanyCRUD(CRUDInterface):
     update_schema = CompanyUpdateSchema
     output_schema = CompanyOutputSchema
 
-    async def create(self, data: "input_schema") -> "output_schema":
-        await self.storage.insert(data.dict())
+    async def create(self, data: CompanyInputSchema) -> CompanyOutputSchema:
+        return await self.db_conn.insert(CompanyModel, data.dict())
 
-    async def read(self, _filter, pagination: Pagination) -> list["output_schema"]:
-        return await self.storage.filter(_filter, pagination)
+    async def read(self, _filter: FilterHandler, pagination: Pagination) -> list[CompanyOutputSchema]:
+        return await self.db_conn.select(CompanyModel, _filter, pagination)
 
-    async def read_by_id(self, _id: int) -> "output_schema":
-        return await self.storage.select(_id)
+    async def read_by_id(self, _id: int) -> CompanyOutputSchema:
+        return (await self.db_conn.select_by_id(CompanyModel, _id))[0]
 
-    async def update_by_id(self, _id: int, data: "update_schema") -> "output_schema":
-        return await self.storage.update(_id, data)
+    async def update_by_id(self, _id: int, data: CompanyUpdateSchema) -> CompanyOutputSchema:
+        return await self.db_conn.update(CompanyModel, _id, data)
 
     async def delete_by_id(self, _id: int) -> NoReturn:
-        await self.storage.delete(_id)
+        await self.db_conn.delete(CompanyModel, _id)

@@ -49,7 +49,7 @@ class TripForPassengerInputSchema(BaseModel):
     trip: conint(gt=0)
 
 
-# Output schemas. Also used to store in pythonic storage
+# Output schemas. Also used to store in pythonic db_conn
 class CompanyOutputSchema(BaseModel):
     id: int | None
     name: str

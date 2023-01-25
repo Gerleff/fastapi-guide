@@ -45,7 +45,7 @@ class GenericStorageList(GenericModel, Generic[SchemaToStoreVar]):
 
     def insert(self, value: SchemaToStoreVar) -> SchemaToStoreVar:
         if self.__root__:
-            assert isinstance(value, type(_last_elem := self.__root__[-1])), "Entities in storage must be the same type"
+            assert isinstance(value, type(_last_elem := self.__root__[-1])), "Entities in db_conn must be the same type"
             value.id = _last_elem.id + 1
         else:
             value.id = 1

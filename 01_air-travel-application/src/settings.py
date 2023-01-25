@@ -1,7 +1,9 @@
+from pathlib import Path
+
 from pydantic import BaseSettings, validator
 
 
-class Settings(BaseSettings):
+class Settings(BaseSettings):  # ToDO separate
     class Config(BaseSettings.Config):
         env_file = ".env"
         env_prefix = "APP_"
@@ -13,6 +15,10 @@ class Settings(BaseSettings):
     @validator("ADDRESS")
     def check_app_address(cls, value: str | None, values: dict) -> str:
         return value or f"http://{values.get('HOST')}:{values.get('PORT')}"
+
+    database_type: str = "pythonic_storage"
+    file_path: str | Path = "models/storage/pythonic/storage.json"
+    rollback: bool = True
 
 
 settings = Settings()

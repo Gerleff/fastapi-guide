@@ -22,7 +22,7 @@ def get_auth_data(security: HTTPAuthorizationCredentials = Security(HTTPBearer(d
 
 
 async def check_user_existence(auth_data: AuthData = Depends(get_auth_data)) -> AuthData:
-    # ToDO check in db users existence
+    # ToDO check in db_conn users existence
     if "exists":
         return auth_data
     raise _auth_error

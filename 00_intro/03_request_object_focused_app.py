@@ -71,7 +71,7 @@ async def get_mountains(
     """
     name_starts_with, name_contains and limit are fastapi.params.Query by default.
     They have default values, so they are not required to use.
-    Mountains stored in app storage are injected with Depends.
+    Mountains stored in app db_conn are injected with Depends.
     """
     result = list(mountains)
     if name_starts_with:

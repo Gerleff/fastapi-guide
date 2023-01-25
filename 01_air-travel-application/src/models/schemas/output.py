@@ -4,10 +4,12 @@ from pydantic import BaseModel
 
 
 class CompanyOutputSchema(BaseModel):
+    id: int
     name: str
 
 
 class TripOutputSchema(BaseModel):
+    id: int
     company: CompanyOutputSchema
     plane: str
     town_from: str
@@ -17,5 +19,6 @@ class TripOutputSchema(BaseModel):
 
 
 class TicketOutputSchema(BaseModel):
+    id: int
     place: str
     trip: TripOutputSchema

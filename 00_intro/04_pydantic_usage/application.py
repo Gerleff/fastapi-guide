@@ -20,7 +20,7 @@ app = FastAPI(docs_url="/", servers=[{"url": settings.ADDRESS, "description": "L
 
 @app.on_event("startup")
 def init_simple_storage():
-    app.state.storage = Storage.parse_file("storage.json")
+    app.state.storage = Storage.parse_file("db_conn.json")
 
 
 @app.on_event("shutdown")
@@ -30,7 +30,7 @@ def save_simple_storage():
 
 
 def get_example_storage(request: Request) -> Storage:
-    return request.app.state.storage
+    return request.app.state.db_conn
 
 
 # For PATCH endpoints it is required to define separated schemas with "type | None" type-hint

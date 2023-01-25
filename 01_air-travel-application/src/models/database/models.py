@@ -15,7 +15,7 @@ class TripModel:
     time_in: datetime
 
     class Meta:
-        table = "trip"
+        table = "trips"
 
 
 @dataclass
@@ -24,7 +24,7 @@ class CompanyModel:
     name: str
 
     class Meta:
-        table = "trip"
+        table = "companies"
 
 
 @dataclass
@@ -35,7 +35,7 @@ class PassInTripModel:
     place: str
 
     class Meta:
-        table = "trip"
+        table = "pass_in_trip"
 
 
 @dataclass
@@ -45,4 +45,4 @@ class UserModel:
     role: UserRoleEnum
 
     class Meta:
-        table = "user"
+        table = "users"
