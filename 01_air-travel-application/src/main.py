@@ -1,25 +1,29 @@
-from fastapi import FastAPI
 import uvicorn
+from fastapi import FastAPI
 
-from models.storage.dependencies import connect_on_startup, disconnect_on_shutdown
-from settings import settings
 from controller.routers import api_routers
-
-app = FastAPI(docs_url="/", servers=[{"url": settings.ADDRESS, "description": "Local server"}])
-
-for router in api_routers:
-    app.include_router(router)
+from models.storage.connection import connect_on_startup, disconnect_on_shutdown
+from settings import get_settings, Settings
 
 
-@app.on_event("startup")
-async def init_database_session():
-    await connect_on_startup(app, settings)
+def build_app(settings: Settings):
+    app = FastAPI(docs_url="/", servers=[{"url": settings.ADDRESS, "description": "Local server"}])
 
+    for router in api_routers:
+        app.include_router(router)
 
-@app.on_event("shutdown")
-async def close_database_session():
-    await disconnect_on_shutdown(app, settings)
+    @app.on_event("startup")
+    async def init_database_session():
+        await connect_on_startup(app, settings)
+
+    @app.on_event("shutdown")
+    async def close_database_session():
+        await disconnect_on_shutdown(app, settings)
+
+    return app
 
 
 if __name__ == "__main__":
-    uvicorn.run("__main__:app", host=settings.HOST, port=settings.PORT, reload=True)
+    launch_settings = get_settings()
+    web_app = build_app(launch_settings)
+    uvicorn.run("__main__:web_app", host=launch_settings.HOST, port=launch_settings.PORT)

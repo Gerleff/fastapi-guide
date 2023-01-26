@@ -1,8 +1,8 @@
-from controller.dependencies.filter_dep import FilterHandler
-from .interfaces import CRUDInterface
 from typing import NoReturn
 
-from controller.dependencies.pagination import Pagination
+from controller.dependencies.filter.base import FilterHandler
+from controller.dependencies.pagination.base import Pagination
+from .interfaces import CRUDInterface
 from ..database.models import CompanyModel, TripModel, PassInTripModel, UserModel
 from ..schemas.input import (
     CompanyInputSchema,

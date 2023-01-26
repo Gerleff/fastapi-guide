@@ -21,7 +21,7 @@ class TripInputSchema(BaseModel):
     @validator("town_to")
     def check_town_pre(cls, value: str, values: dict):
         assert value != values["town_from"], "Trips to the same town shouldn't be planned"
-        return values
+        return value
 
     @validator("time_in")
     def check_time(cls, value: datetime, values: dict):

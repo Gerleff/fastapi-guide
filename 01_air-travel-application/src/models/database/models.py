@@ -1,11 +1,11 @@
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, BaseConfig
 
 from models.enum import UserRoleEnum, PlaneEnum
 
 
-class BaseDBModel(BaseModel):
+class BaseDBModel(BaseModel, orm_mode=True):
     id: int | None = None  # Before storing in DB id = None
 
     class Meta:

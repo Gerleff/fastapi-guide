@@ -1,19 +1,10 @@
 from pathlib import Path
-from typing import Type, Protocol, Literal, NoReturn
+from typing import Type, Protocol, NoReturn, Literal
 
+from fastapi import FastAPI
 from starlette.requests import Request
 
-from .pythonic.storage import StorageHandler
-
-
-class DBSettingsProtocol(Protocol):
-    database_type: Literal["pythonic_storage", "sqlite"] = "pythonic_storage"
-    match database_type:
-        case "pythonic_storage":
-            file_path: str | Path = "storage.json"
-            rollback: bool = True
-        case _:
-            raise NotImplementedError
+from models.storage.pythonic.storage import StorageHandler
 
 
 class DatabaseConnectorProtocol(Protocol):
@@ -24,7 +15,19 @@ class DatabaseConnectorProtocol(Protocol):
         ...
 
 
-async def connect_on_startup(app, db_settings: DBSettingsProtocol):
+class DBSettingsProtocol(Protocol):
+    database_type: Literal["pythonic_storage", "sqlite"] = "pythonic_storage"
+    match database_type:
+        case "pythonic_storage":
+            file_path: str | Path = "storage.json"
+            rollback: bool = True
+        case "sqlite":
+            raise NotImplementedError
+        case _:
+            raise NotImplementedError
+
+
+async def connect_on_startup(app: FastAPI, db_settings: DBSettingsProtocol):
     db_connection_cls: Type[DatabaseConnectorProtocol]
     match db_settings.database_type:
         case "pythonic_storage":

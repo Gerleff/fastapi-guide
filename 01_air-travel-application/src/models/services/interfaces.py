@@ -3,9 +3,9 @@ from typing import TypeVar, Type, NoReturn, Protocol
 from fastapi import Depends
 from pydantic import BaseModel
 
-from controller.dependencies.filter_dep import FilterHandler
-from controller.dependencies.pagination import Pagination
-from models.storage.dependencies import get_db_connection
+from controller.dependencies.filter.base import FilterHandler
+from controller.dependencies.pagination.base import Pagination
+from models.storage.connection import get_db_connection
 
 InputSchemaT = TypeVar("InputSchemaT", bound=Type[BaseModel])
 UpdateSchemaT = TypeVar("UpdateSchemaT", bound=Type[BaseModel])

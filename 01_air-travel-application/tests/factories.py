@@ -1,7 +1,6 @@
 import random
 
 from pydantic_factories import ModelFactory
-
 from sample import DatabaseModels, Storage
 
 

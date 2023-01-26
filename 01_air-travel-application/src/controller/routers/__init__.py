@@ -1,7 +1,6 @@
-from .healthcheck import router as healthcheck_router
-
 # from .users import router as users_router
 from .companies import router as companies_router
+from .healthcheck import router as healthcheck_router
 from .trips import router as trips_router
 
 # from .tickets import router as tickets_router

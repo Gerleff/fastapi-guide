@@ -28,10 +28,11 @@ async def check_user_existence(auth_data: AuthData = Depends(get_auth_data)) -> 
     raise _auth_error
 
 
-def auth_only_permission(_=Depends(check_user_existence)):
-    ...
+def auth_only_permission(auth_data: AuthData = Depends(check_user_existence)) -> AuthData:
+    return auth_data
 
 
-def admin_only_permission(auth_data: AuthData = Depends(check_user_existence)):
+def admin_only_permission(auth_data: AuthData = Depends(check_user_existence)) -> AuthData:
     if auth_data.role != UserRoleEnum.ADMIN:
         raise _auth_error
+    return auth_data

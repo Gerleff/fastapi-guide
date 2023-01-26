@@ -21,4 +21,5 @@ class Settings(BaseSettings):  # ToDO separate
     rollback: bool = True
 
 
-settings = Settings()
+def get_settings(_settings: Settings = Settings()):
+    return _settings

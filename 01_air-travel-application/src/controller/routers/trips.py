@@ -6,8 +6,10 @@ from pydantic import constr
 from starlette import status
 
 from controller.dependencies.auth import admin_only_permission
-from controller.dependencies.filter_dep import make_filter_dependancy, FilterHandler
-from controller.dependencies.pagination import page_size_pagination, Pagination
+from controller.dependencies.filter.base import FilterHandler
+from controller.dependencies.filter.depends import make_filter_dependency
+from controller.dependencies.pagination.base import Pagination
+from controller.dependencies.pagination.depends import page_size_pagination
 from models.enum import PlaneEnum
 from models.services.crud import TripCRUD
 
@@ -35,7 +37,7 @@ class TripFilter:
 @router.get("", response_model=list[TripCRUD.output_schema])
 async def get_trips(
     pagination: Pagination = Depends(page_size_pagination),
-    _filter: FilterHandler = Depends(make_filter_dependancy(TripFilter)),
+    _filter: FilterHandler = Depends(make_filter_dependency(TripFilter)),
     service: TripCRUD = Depends(),
 ):
     return await service.read(_filter, pagination)
@@ -44,7 +46,7 @@ async def get_trips(
 @router.get("/count", response_model=int)
 async def get_trips_count(
     pagination: Pagination = Depends(page_size_pagination),
-    _filter: FilterHandler = Depends(make_filter_dependancy(TripFilter)),
+    _filter: FilterHandler = Depends(make_filter_dependency(TripFilter)),
     service: TripCRUD = Depends(),
 ):
     return len(await service.read(_filter, pagination))

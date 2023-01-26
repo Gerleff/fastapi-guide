@@ -1,6 +1,7 @@
-from pydantic import BaseModel, create_model
-from typing import Type
 from functools import lru_cache
+from typing import Type
+
+from pydantic import BaseModel, create_model
 
 
 @lru_cache(maxsize=None)

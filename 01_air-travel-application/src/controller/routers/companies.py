@@ -1,10 +1,13 @@
-from fastapi import APIRouter, Depends, Query
 from dataclasses import dataclass
+
+from fastapi import APIRouter, Depends, Query
 from starlette import status
 
 from controller.dependencies.auth import admin_only_permission
-from controller.dependencies.filter_dep import make_filter_dependancy, FilterHandler
-from controller.dependencies.pagination import Pagination, page_size_pagination
+from controller.dependencies.filter.base import FilterHandler
+from controller.dependencies.filter.depends import make_filter_dependency
+from controller.dependencies.pagination.base import Pagination
+from controller.dependencies.pagination.depends import page_size_pagination
 from models.services.crud import CompanyCRUD
 
 router = APIRouter(prefix="/companies", tags=["Company"])
@@ -20,7 +23,7 @@ class CompanyFilter:
 @router.get("", response_model=list[CompanyCRUD.output_schema])
 async def get_companies(
     pagination: Pagination = Depends(page_size_pagination),
-    _filter: FilterHandler = Depends(make_filter_dependancy(CompanyFilter)),
+    _filter: FilterHandler = Depends(make_filter_dependency(CompanyFilter)),
     service: CompanyCRUD = Depends(),
 ):
     return await service.read(_filter, pagination)
@@ -29,7 +32,7 @@ async def get_companies(
 @router.get("/count", response_model=int)
 async def get_companies_count(
     pagination: Pagination = Depends(page_size_pagination),
-    _filter: FilterHandler = Depends(make_filter_dependancy(CompanyFilter)),
+    _filter: FilterHandler = Depends(make_filter_dependency(CompanyFilter)),
     service: CompanyCRUD = Depends(),
 ):
     return len(await service.read(_filter, pagination))

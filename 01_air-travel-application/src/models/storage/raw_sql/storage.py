@@ -2,13 +2,12 @@ import operator
 from pathlib import Path
 from typing import TypeVar, Generic, Iterator, Protocol, Type
 
+from controller.dependencies.filter_dep import FilterHandler
 from pydantic import BaseModel, Field, validator
 from pydantic.generics import GenericModel
 
-from controller.dependencies.filter.pythonic import PythonicFilterHandler
-from controller.dependencies.pagination.pythonic import PythonicPagination
+from controller.dependencies.pagination import Pagination
 from models.database.models import CompanyModel, PassInTripModel, TripModel, UserModel, BaseDBModel
-
 
 ModelToStoreVar = TypeVar("ModelToStoreVar", bound=BaseDBModel)
 
@@ -37,7 +36,7 @@ class GenericStorageList(GenericModel, Generic[ModelToStoreVar], arbitrary_types
     def __iter__(self) -> Iterator[ModelToStoreVar]:
         return self.__root__.__iter__()
 
-    def select(self, _filter: PythonicFilterHandler, pagination: PythonicPagination):
+    def select(self, _filter: FilterHandler, pagination: Pagination):
         """Simple equality filter implementation"""
         return _filter.filter_python_list(self.__root__)[pagination.slice]
 
@@ -92,7 +91,7 @@ class StorageHandler:
                 file.write(self.storage.json(indent=4, ensure_ascii=False))
 
     async def select(
-        self, model: Type[BaseDBModel], _filter: PythonicFilterHandler, pagination: PythonicPagination
+        self, model: Type[BaseDBModel], _filter: FilterProtocol, pagination: PaginationProtocol
     ) -> list[BaseDBModel]:
         pytonic_storage_list: GenericStorageList = getattr(self.storage, model.Meta.table)
         return pytonic_storage_list.select(_filter, pagination)
