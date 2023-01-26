@@ -1,6 +1,6 @@
 import operator
 from collections import defaultdict
-from typing import Iterable, Any, Callable
+from typing import Any, Callable
 
 from fastapi import Depends
 from pydantic import BaseModel, Extra
@@ -13,6 +13,7 @@ class FilterArgsMap(BaseModel, extra=Extra.forbid):
     gt_: list[tuple[str, Any]] | None = None
     ge_: list[tuple[str, Any]] | None = None
     in_: list[tuple[str, list[Any]]] | None = None
+    like_: list[tuple[str, Any]] | None = None
 
 
 class FilterHandler:
@@ -29,13 +30,16 @@ class FilterHandler:
         return FilterArgsMap(**filter_args_map).dict(exclude_none=True)
 
     def filter_python_list(self, python_list: list) -> list:
+        def like_func(a, b):
+            return str(a).lower() in str(b).lower()
         _func_map: dict[str, Callable[[Any, Any], bool]] = {
             "eq_": operator.eq,
             "lt_": operator.lt,
             "le_": operator.le,
             "gt_": operator.gt,
             "ge_": operator.ge,
-            "in_": operator.contains,  # note reversed args
+            "in_": operator.contains,
+            "like_": like_func
         }
         new_list = python_list
         for filter_type, field_value_list_of_tuples in self.args_map.items():
@@ -55,7 +59,6 @@ class FilterHandler:
     def sql(self) -> str:
         if not self.args_map:
             return ""
-        _expressions = []
         _stmt_map: dict[str, str] = {
             "eq_": "=",
             "lt_": "<",
@@ -63,7 +66,9 @@ class FilterHandler:
             "gt_": ">",
             "ge_": ">=",
             "in_": "IN",  # TODO Check
+            "like_": "ILIKE"  # TODO Check
         }
+        _expressions = []
         for filter_type, field_value_list in self.args_map.items():
             _operator = _stmt_map[filter_type]
             for field, value in field_value_list:

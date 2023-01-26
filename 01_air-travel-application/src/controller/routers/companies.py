@@ -14,7 +14,7 @@ router = APIRouter(prefix="/companies", tags=["Company"])
 class CompanyFilter:
     id__eq: int | None = Query(None, description="filter by id", alias="id")
     id__in: list[int] | None = Query(None, description="filter by inclusion in id list", alias="ids")
-    name__eq: str | None = Query(None, description="filter by name equality", alias="name")
+    name__like: str | None = Query(None, description="filter by name", alias="name")
 
 
 @router.get("", response_model=list[CompanyCRUD.output_schema])
