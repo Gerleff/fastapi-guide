@@ -42,11 +42,11 @@ async def get_company(_id: int, service: CompanyCRUD = Depends()):
 
 @router.post("", status_code=status.HTTP_201_CREATED, response_model=CompanyCRUD.output_schema)
 async def add_company(
-    company_data: CompanyCRUD.input_schema, service: CompanyCRUD = Depends(), _=Depends(admin_only_permission)
+    company_data: CompanyCRUD.input_schema, service: CompanyCRUD = Depends(), __auth=Depends(admin_only_permission)
 ):
     return await service.create(company_data)
 
 
 @router.delete("/{_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_company(_id: int, service: CompanyCRUD = Depends(), _=Depends(admin_only_permission)):
+async def delete_company(_id: int, service: CompanyCRUD = Depends(), __auth=Depends(admin_only_permission)):
     await service.delete_by_id(_id)

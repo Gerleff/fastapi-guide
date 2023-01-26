@@ -32,6 +32,7 @@ class FilterHandler:
     def filter_python_list(self, python_list: list) -> list:  # ToDo into Storage
         def like_func(a, b):
             return str(a).lower() in str(b).lower()
+
         _func_map: dict[str, Callable[[Any, Any], bool]] = {
             "eq_": operator.eq,
             "lt_": operator.lt,
@@ -39,7 +40,7 @@ class FilterHandler:
             "gt_": operator.gt,
             "ge_": operator.ge,
             "in_": operator.contains,
-            "like_": like_func
+            "like_": like_func,
         }
         new_list = python_list
         for filter_type, field_value_list_of_tuples in self.args_map.items():
@@ -66,7 +67,7 @@ class FilterHandler:
             "gt_": ">",
             "ge_": ">=",
             "in_": "IN",  # TODO Check
-            "like_": "ILIKE"  # TODO Check
+            "like_": "ILIKE",  # TODO Check
         }
         _expressions = []
         for filter_type, field_value_list in self.args_map.items():
