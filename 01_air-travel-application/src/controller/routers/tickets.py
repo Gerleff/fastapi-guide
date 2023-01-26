@@ -26,7 +26,7 @@ async def add_profile_trip(
     trip_id = pass_in_trip_data_dict.pop("trip")
     if not (trip := storage.trips.get_by_id(trip_id)):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Trip with that id does not exist")
-    return storage.pass_in_trip.insert(TripForPassengerOutputSchema(trip=trip, **pass_in_trip_data_dict))
+    return storage.pass_in_trip.insert(TripForPassengerOutputSchema(trip=trip, **pass_in_trip_data_dict), )
 
 
 @router.delete("/{_id}", status_code=status.HTTP_204_NO_CONTENT)

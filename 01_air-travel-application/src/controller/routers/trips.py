@@ -1,28 +1,63 @@
-from fastapi import APIRouter, Depends
+from dataclasses import dataclass
+from datetime import datetime
+
+from fastapi import APIRouter, Depends, Query
+from pydantic import constr
 from starlette import status
+
+from controller.dependencies.auth import admin_only_permission
+from controller.dependencies.filter_dep import make_filter_dependancy, FilterHandler
+from controller.dependencies.pagination import page_size_pagination, Pagination
+from models.enum import PlaneEnum
+from models.services.crud import TripCRUD
 
 router = APIRouter(prefix="/trips", tags=["Trip"])
 
 
-@router.get("", response_model=list[TripOutputSchema])
-async def get_trips(plane: PlaneEnum | None = None, storage: Storage = Depends(get_example_storage)):
-    return storage.trips.filter(plane=plane)
+@dataclass
+class TripFilter:
+    company__eq: int | None = Query(None, description="filter by company id", alias="company")
+    company__in: list[int] | None = Query(None, description="filter by inclusion in company id list", alias="companies")
+    plane__eq: PlaneEnum | None = Query(None, description="filter by plane", alias="plane")
+    plane__in: list[PlaneEnum] | None = Query(None, description="filter by planes", alias="planes")
+    town_from__like: constr(min_length=1, max_length=64) | None = Query(None, description="filter by town_from", alias="town_from")
+    town_to__like: constr(min_length=1, max_length=64) | None = Query(None, description="filter by town_to", alias="town_to")
+    time_out__le: datetime | None = Query(None, description="filter by trips <= time_out", alias="time_out_le")
+    time_out__ge: datetime | None = Query(None, description="filter by trips >= time_out", alias="time_out_ge")
+    time_in__le: datetime | None = Query(None, description="filter by trips <= time_in", alias="time_in_le")
+    time_in__ge: datetime | None = Query(None, description="filter by trips >= time_in", alias="time_in_ge")
 
 
-@router.get("/{_id}", response_model=TripOutputSchema, tags=["Trip"])
-async def get_trip(_id: int, storage: Storage = Depends(get_example_storage)):
-    return storage.trips.get_by_id(_id)
+@router.get("", response_model=list[TripCRUD.output_schema])
+async def get_trips(
+    pagination: Pagination = Depends(page_size_pagination),
+    _filter: FilterHandler = Depends(make_filter_dependancy(TripFilter)),
+    service: TripCRUD = Depends(),
+):
+    return await service.read(_filter, pagination)
 
 
-@router.post("", status_code=status.HTTP_201_CREATED, response_model=TripOutputSchema)
-async def add_trip(trip_data: TripInputSchema, storage: Storage = Depends(get_example_storage)):
-    trip_data_dict = trip_data.dict()
-    company_id = trip_data_dict.pop("company")
-    if not (company := storage.companies.get_by_id(company_id)):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Company with that id does not exist")
-    return storage.trips.insert(TripOutputSchema(company=company, **trip_data_dict))
+@router.get("/count", response_model=int)
+async def get_trips_count(
+    pagination: Pagination = Depends(page_size_pagination),
+    _filter: FilterHandler = Depends(make_filter_dependancy(TripFilter)),
+    service: TripCRUD = Depends(),
+):
+    return len(await service.read(_filter, pagination))
+
+
+@router.get("/{_id}", response_model=TripCRUD.output_schema)
+async def get_trip(_id: int, service: TripCRUD = Depends()):
+    return await service.read_by_id(_id)
+
+
+@router.post("", status_code=status.HTTP_201_CREATED, response_model=TripCRUD.output_schema)
+async def add_trip(
+    company_data: TripCRUD.input_schema, service: TripCRUD = Depends(), _=Depends(admin_only_permission)
+):
+    return await service.create(company_data)
 
 
 @router.delete("/{_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_trip(_id: int, storage: Storage = Depends(get_example_storage)):
-    storage.trips.delete_by_id(_id)
+async def delete_trip(_id: int, service: TripCRUD = Depends(), _=Depends(admin_only_permission)):
+    await service.delete_by_id(_id)

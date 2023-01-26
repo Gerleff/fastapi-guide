@@ -6,11 +6,11 @@ class Pagination(NamedTuple):
     offset: int = 0
 
     @property
-    def slice(self) -> slice:
+    def slice(self) -> slice:  # ToDo into Storage
         return slice(self.offset, self.offset + self.limit + 1)
 
     @property
-    def sql(self) -> str:
+    def sql(self) -> str:  # ToDo into Storage
         _expression = f"LIMIT {self.limit}"
         if self.offset:
             _expression += f" OFFSET {self.offset}"

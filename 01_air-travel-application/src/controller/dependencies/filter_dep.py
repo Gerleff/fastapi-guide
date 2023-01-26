@@ -29,7 +29,7 @@ class FilterHandler:
                 filter_args_map[filter_type + "_"].append((field, value))
         return FilterArgsMap(**filter_args_map).dict(exclude_none=True)
 
-    def filter_python_list(self, python_list: list) -> list:
+    def filter_python_list(self, python_list: list) -> list:  # ToDo into Storage
         def like_func(a, b):
             return str(a).lower() in str(b).lower()
         _func_map: dict[str, Callable[[Any, Any], bool]] = {
@@ -56,7 +56,7 @@ class FilterHandler:
         return new_list
 
     @property
-    def sql(self) -> str:
+    def sql(self) -> str:  # ToDo into Storage
         if not self.args_map:
             return ""
         _stmt_map: dict[str, str] = {
