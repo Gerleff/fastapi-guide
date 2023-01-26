@@ -4,9 +4,16 @@ from pydantic.dataclasses import dataclass
 from models.enum import UserRoleEnum, PlaneEnum
 
 
+@dataclass(kw_only=True)
+class BaseDBModel:
+    id: int | None = None  # Before storing in DB id = None
+
+    class Meta:
+        table = None
+
+
 @dataclass
-class TripModel:
-    id: int
+class TripModel(BaseDBModel):
     company: int
     plane: PlaneEnum
     town_from: str
@@ -19,8 +26,7 @@ class TripModel:
 
 
 @dataclass
-class CompanyModel:
-    id: int
+class CompanyModel(BaseDBModel):
     name: str
 
     class Meta:
@@ -28,8 +34,7 @@ class CompanyModel:
 
 
 @dataclass
-class PassInTripModel:
-    id: int
+class PassInTripModel(BaseDBModel):
     trip: int
     passenger: int
     place: str
@@ -39,8 +44,7 @@ class PassInTripModel:
 
 
 @dataclass
-class UserModel:
-    id: int
+class UserModel(BaseDBModel):
     name: str
     role: UserRoleEnum
 

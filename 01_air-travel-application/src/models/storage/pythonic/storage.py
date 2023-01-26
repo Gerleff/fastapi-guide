@@ -3,13 +3,16 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field, validator
 from pydantic.generics import GenericModel
-from typing import TypeVar, Generic, Iterator, Protocol, runtime_checkable
+from typing import TypeVar, Generic, Iterator, Protocol, runtime_checkable, Type
+
+from controller.dependencies.filter_dep import FilterHandler
+from controller.dependencies.pagination import Pagination
 from models.database.models import CompanyModel, PassInTripModel, TripModel, UserModel
 
 
 @runtime_checkable
 class ModelProtocol(Protocol):
-    id: int
+    id: int | None
 
     class Meta:
         table: str
@@ -46,10 +49,16 @@ class GenericStorageList(GenericModel, Generic[ModelToStoreVar], arbitrary_types
         """To validate whole list as united value"""
         return sorted(value, key=operator.attrgetter("id"))
 
+    @property
+    def next_id(self):
+        if self.__root__:
+            return self.__root__[-1].id + 1
+        return 1
+
     def __iter__(self) -> Iterator[ModelToStoreVar]:
         return self.__root__.__iter__()
 
-    def select(self, _filter: FilterProtocol, pagination: PaginationProtocol):
+    def select(self, _filter: FilterHandler, pagination: Pagination):
         """Simple equality filter implementation"""
         return _filter.filter_python_list(self.__root__)[pagination.slice]
 
@@ -59,21 +68,16 @@ class GenericStorageList(GenericModel, Generic[ModelToStoreVar], arbitrary_types
                 return self.__root__[elem_index]
 
     def insert(self, value: ModelToStoreVar) -> ModelToStoreVar:
-        if self.__root__:
-            _last_elem = self.__root__[-1]
-            # assert isinstance(value, type(_last_elem)), "Entities in db_conn must be the same type"
-            value.id = _last_elem.id + 1
-        else:
-            value.id = 1
         self.__root__.append(value)
         return value
 
-    def update(self, _id: int, value: ModelToStoreVar) -> ModelToStoreVar | None:
+    def update(self, _id: int, value: dict) -> ModelToStoreVar | None:
         for elem_index in range(len(self.__root__)):
             if self.__root__[elem_index].id == _id:
-                value.id = _id
-                self.__root__[elem_index] = value
-                return value
+                model_to_change = self.__root__[elem_index]
+                for field, new_value in value.items():
+                    setattr(model_to_change, field, new_value)
+                return model_to_change
 
     def delete(self, _id: int) -> bool:
         for elem_index in range(len(self.__root__)):
@@ -109,23 +113,23 @@ class StorageHandler:
                 file.write(self.storage.json(indent=4, ensure_ascii=False))
 
     async def select(
-            self, model: ModelProtocol, _filter: FilterProtocol, pagination: PaginationProtocol
+        self, model: Type[ModelProtocol], _filter: FilterProtocol, pagination: PaginationProtocol
     ) -> list[ModelProtocol]:
         pytonic_storage_list: GenericStorageList = getattr(self.storage, model.Meta.table)
         return pytonic_storage_list.select(_filter, pagination)
 
-    async def select_by_id(self, model: ModelProtocol, _id: int) -> ModelProtocol:
+    async def select_by_id(self, model: Type[ModelProtocol], _id: int) -> ModelProtocol:
         pytonic_storage_list: GenericStorageList = getattr(self.storage, model.Meta.table)
         return pytonic_storage_list.select_by_id(_id)
 
-    async def insert(self, model: ModelProtocol, value: ModelToStoreVar) -> ModelToStoreVar:
+    async def insert(self, model: Type[ModelProtocol], value: dict) -> ModelToStoreVar:
         pytonic_storage_list: GenericStorageList = getattr(self.storage, model.Meta.table)
-        return pytonic_storage_list.insert(value)
+        return pytonic_storage_list.insert(model(id=pytonic_storage_list.next_id, **value))
 
-    async def update(self, model: ModelProtocol, _id: int, value: ModelToStoreVar) -> ModelToStoreVar | None:
+    async def update(self, model: Type[ModelProtocol], _id: int, value: dict) -> ModelToStoreVar | None:
         pytonic_storage_list: GenericStorageList = getattr(self.storage, model.Meta.table)
         return pytonic_storage_list.update(_id, value)
 
-    async def delete(self, model: ModelProtocol, _id: int) -> bool:
+    async def delete(self, model: Type[ModelProtocol], _id: int) -> bool:
         pytonic_storage_list: GenericStorageList = getattr(self.storage, model.Meta.table)
         return pytonic_storage_list.delete(_id)

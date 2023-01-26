@@ -7,12 +7,12 @@ from pydantic import BaseModel, Extra
 
 
 class FilterArgsMap(BaseModel, extra=Extra.forbid):
-    _eq: list[tuple[str, Any]] | None = None
-    _lt: list[tuple[str, Any]] | None = None
-    _le: list[tuple[str, Any]] | None = None
-    _gt: list[tuple[str, Any]] | None = None
-    _ge: list[tuple[str, Any]] | None = None
-    _in: list[tuple[str, Iterable]] | None = None
+    eq_: list[tuple[str, Any]] | None = None
+    lt_: list[tuple[str, Any]] | None = None
+    le_: list[tuple[str, Any]] | None = None
+    gt_: list[tuple[str, Any]] | None = None
+    ge_: list[tuple[str, Any]] | None = None
+    in_: list[tuple[str, list[Any]]] | None = None
 
 
 class FilterHandler:
@@ -24,34 +24,32 @@ class FilterHandler:
         filter_args_map = defaultdict(list)
         for dataclass_field in filter_data.__dataclass_fields__:
             if value := getattr(filter_data, dataclass_field):
-                field, filter_type = filter_data.dataclass_field.split("__")
-                filter_args_map["_" + filter_type].append((field, value))
-        return FilterArgsMap.parse_obj(filter_args_map).dict(exclude_none=True)
+                field, filter_type = dataclass_field.split("__")
+                filter_args_map[filter_type + "_"].append((field, value))
+        return FilterArgsMap(**filter_args_map).dict(exclude_none=True)
 
     def filter_python_list(self, python_list: list) -> list:
         _func_map: dict[str, Callable[[Any, Any], bool]] = {
-            "_eq": operator.eq,
-            "_lt": operator.lt,
-            "_le": operator.le,
-            "_gt": operator.gt,
-            "_ge": operator.ge,
-            "_in": operator.contains,  # note reversed args
+            "eq_": operator.eq,
+            "lt_": operator.lt,
+            "le_": operator.le,
+            "gt_": operator.gt,
+            "ge_": operator.ge,
+            "in_": operator.contains,  # note reversed args
         }
-
-        for filter_type, field_value_list in self.args_map.items():
+        new_list = python_list
+        for filter_type, field_value_list_of_tuples in self.args_map.items():
+            check_list, new_list = new_list, []
             filter_func = _func_map[filter_type]
-            python_list[:] = [
-                elem
-                for elem in python_list
-                if all(
-                    tuple(
-                        filter_func(value, getattr(elem, field, None))
-                        for field, value in field_value_list
-                        if value is not None
-                    )
-                )
-            ]
-        return python_list
+            for elem in check_list:
+                filtering_result = []
+                for field, value in field_value_list_of_tuples:
+                    filter_func_result = filter_func(value, getattr(elem, field, None))
+                    filtering_result.append(filter_func_result)
+                if all(filtering_result):
+                    new_list.append(elem)
+
+        return new_list
 
     @property
     def sql(self) -> str:
@@ -59,12 +57,12 @@ class FilterHandler:
             return ""
         _expressions = []
         _stmt_map: dict[str, str] = {
-            "_eq": "=",
-            "_lt": "<",
-            "_le": "<=",
-            "_gt": ">",
-            "_ge": ">=",
-            "_in": "IN",  # TODO Check
+            "eq_": "=",
+            "lt_": "<",
+            "le_": "<=",
+            "gt_": ">",
+            "ge_": ">=",
+            "in_": "IN",  # TODO Check
         }
         for filter_type, field_value_list in self.args_map.items():
             _operator = _stmt_map[filter_type]
@@ -77,4 +75,5 @@ class FilterHandler:
 def make_filter_dependancy(filter_dataclass):
     def filter_dependency(_filter: filter_dataclass = Depends()) -> FilterHandler:
         return FilterHandler(_filter)
+
     return filter_dependency

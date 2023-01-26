@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, Query
-from pydantic.dataclasses import dataclass
+from dataclasses import dataclass
 from starlette import status
 
 from controller.dependencies.auth import admin_only_permission
@@ -12,9 +12,9 @@ router = APIRouter(prefix="/companies", tags=["Company"])
 
 @dataclass
 class CompanyFilter:
-    id__eq: int | None = Query(None, alias="id")
-    id__in: list[int] | None = Query(None, alias="ids")
-    name__eq: str | None = Query(None, alias="name")
+    id__eq: int | None = Query(None, description="filter by id", alias="id")
+    id__in: list[int] | None = Query(None, description="filter by inclusion in id list", alias="ids")
+    name__eq: str | None = Query(None, description="filter by name equality", alias="name")
 
 
 @router.get("", response_model=list[CompanyCRUD.output_schema])
@@ -24,6 +24,15 @@ async def get_companies(
     service: CompanyCRUD = Depends(),
 ):
     return await service.read(_filter, pagination)
+
+
+@router.get("/count", response_model=int)
+async def get_companies_count(
+    pagination: Pagination = Depends(page_size_pagination),
+    _filter: FilterHandler = Depends(make_filter_dependancy(CompanyFilter)),
+    service: CompanyCRUD = Depends(),
+):
+    return len(await service.read(_filter, pagination))
 
 
 @router.get("/{_id}", response_model=CompanyCRUD.output_schema)
