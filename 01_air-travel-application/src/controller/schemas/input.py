@@ -3,7 +3,7 @@ from datetime import datetime
 from pydantic import BaseModel, constr, conint, validator
 
 from .utils import make_update_schema
-from ..enum import PlaneEnum
+from model.enum import PlaneEnum, UserRoleEnum
 
 
 class CompanyInputSchema(BaseModel):
@@ -34,6 +34,12 @@ class TicketInputSchema(BaseModel):
     trip: conint(gt=0)
 
 
+class UserInputSchema(BaseModel):
+    role: UserRoleEnum
+    name: str
+
+
 CompanyUpdateSchema = make_update_schema(CompanyInputSchema)
 TripUpdateSchema = make_update_schema(TripInputSchema)
 TicketUpdateSchema = make_update_schema(TicketInputSchema)
+UserUpdateSchema = make_update_schema(UserInputSchema)

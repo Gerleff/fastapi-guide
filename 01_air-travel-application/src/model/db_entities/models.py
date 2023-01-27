@@ -1,8 +1,8 @@
 from datetime import datetime
 
-from pydantic import BaseModel, BaseConfig
+from pydantic import BaseModel
 
-from models.enum import UserRoleEnum, PlaneEnum
+from model.enum import UserRoleEnum, PlaneEnum
 
 
 class BaseDBModel(BaseModel, orm_mode=True):

@@ -2,8 +2,8 @@ from typing import Type
 
 from fastapi import Depends
 
-from models.storage.connection import DBSettingsProtocol
-from settings import get_settings
+from model.storage.connection import DBSettingsProtocol
+from config.settings import get_settings
 from .base import FilterHandler
 from .pythonic import PythonicFilterHandler
 from .raw_sql import RawSQLFilterHandler

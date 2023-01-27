@@ -1,14 +1,20 @@
 import uvicorn
-from fastapi import FastAPI
 
-from controller.routers import api_routers
-from models.storage.connection import connect_on_startup, disconnect_on_shutdown
-from settings import get_settings, Settings
+from config.settings import get_settings, Settings
 
 
 def build_app(settings: Settings):
+    from fastapi import FastAPI
+
+    from controller.routers import api_routers
+    from config.exception_handlers import exception_handlers
+
+    from model.storage.connection import connect_on_startup, disconnect_on_shutdown
+
     app = FastAPI(docs_url="/", servers=[{"url": settings.ADDRESS, "description": "Local server"}])
 
+    for exc, handler in exception_handlers:
+        app.add_exception_handler(exc, handler)
     for router in api_routers:
         app.include_router(router)
 

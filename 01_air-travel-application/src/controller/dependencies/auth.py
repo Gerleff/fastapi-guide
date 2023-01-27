@@ -3,7 +3,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic.dataclasses import dataclass
 from starlette import status
 
-from models.enum import UserRoleEnum
+from model.enum import UserRoleEnum
 
 
 @dataclass

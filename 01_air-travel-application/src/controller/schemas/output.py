@@ -2,6 +2,8 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
+from model.enum import UserRoleEnum
+
 
 class CompanyOutputSchema(BaseModel):
     id: int
@@ -22,3 +24,9 @@ class TicketOutputSchema(BaseModel):
     id: int
     place: str
     trip: TripOutputSchema
+
+
+class UserOutputSchema(BaseModel):
+    id: int
+    role: UserRoleEnum
+    name: str

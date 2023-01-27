@@ -10,8 +10,10 @@ from controller.dependencies.filter.base import FilterHandler
 from controller.dependencies.filter.depends import make_filter_dependency
 from controller.dependencies.pagination.base import Pagination
 from controller.dependencies.pagination.depends import page_size_pagination
-from models.enum import PlaneEnum
-from models.services.crud import TripCRUD
+from controller.schemas.input import TripInputSchema, TripUpdateSchema
+from controller.schemas.output import TripOutputSchema
+from model.enum import PlaneEnum
+from model.services.crud.trip import TripCRUD
 
 router = APIRouter(prefix="/trips", tags=["Trip"])
 
@@ -34,7 +36,7 @@ class TripFilter:
     time_in__ge: datetime | None = Query(None, description="filter by trips >= time_in", alias="time_in_ge")
 
 
-@router.get("", response_model=list[TripCRUD.output_schema])
+@router.get("", response_model=list[TripOutputSchema])
 async def get_trips(
     pagination: Pagination = Depends(page_size_pagination),
     _filter: FilterHandler = Depends(make_filter_dependency(TripFilter)),
@@ -52,16 +54,21 @@ async def get_trips_count(
     return len(await service.read(_filter, pagination))
 
 
-@router.get("/{_id}", response_model=TripCRUD.output_schema)
+@router.get("/{_id}", response_model=TripOutputSchema)
 async def get_trip(_id: int, service: TripCRUD = Depends()):
     return await service.read_by_id(_id)
 
 
-@router.post("", status_code=status.HTTP_201_CREATED, response_model=TripCRUD.output_schema)
-async def add_trip(
-    company_data: TripCRUD.input_schema, service: TripCRUD = Depends(), __auth=Depends(admin_only_permission)
+@router.post("", status_code=status.HTTP_201_CREATED, response_model=TripOutputSchema)
+async def add_trip(trip_data: TripInputSchema, service: TripCRUD = Depends(), __auth=Depends(admin_only_permission)):
+    return await service.create(trip_data.dict())
+
+
+@router.patch("/{_id}", response_model=TripOutputSchema)
+async def edit_trip(
+    _id: int, trip_data: TripUpdateSchema, service: TripCRUD = Depends(), __auth=Depends(admin_only_permission)
 ):
-    return await service.create(company_data)
+    return await service.update_by_id(_id, trip_data.dict())
 
 
 @router.delete("/{_id}", status_code=status.HTTP_204_NO_CONTENT)

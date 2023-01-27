@@ -17,7 +17,7 @@ class Settings(BaseSettings):  # ToDO separate
         return value or f"http://{values.get('HOST')}:{values.get('PORT')}"
 
     database_type: str = "pythonic_storage"
-    file_path: str | Path = "models/storage/pythonic/storage.json"
+    file_path: str | Path = "model/storage/pythonic/storage.json"
     rollback: bool = True
 
 

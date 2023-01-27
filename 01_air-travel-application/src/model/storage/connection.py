@@ -4,7 +4,7 @@ from typing import Type, Protocol, NoReturn, Literal
 from fastapi import FastAPI
 from starlette.requests import Request
 
-from models.storage.pythonic.storage import StorageHandler
+from model.storage.pythonic.storage import StorageHandler
 
 
 class DatabaseConnectorProtocol(Protocol):

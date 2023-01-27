@@ -5,7 +5,7 @@ from fastapi import Depends
 from .base import Pagination
 from .pythonic import PythonicPagination
 from .raw_sql import RawSQLPagination
-from settings import get_settings
+from config.settings import get_settings
 
 
 def get_pagination_class():
