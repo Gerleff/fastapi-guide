@@ -6,10 +6,8 @@ from pydantic import constr
 from starlette import status
 
 from controller.dependencies.auth import admin_only_permission
-from controller.dependencies.filter.base import FilterHandler
-from controller.dependencies.filter.depends import make_filter_dependency
-from controller.dependencies.pagination.base import Pagination
-from controller.dependencies.pagination.depends import page_size_pagination
+from controller.dependencies.filters import BaseFilter
+from controller.dependencies.pagination import page_size_pagination, Pagination
 from controller.schemas.input import TripInputSchema, TripUpdateSchema
 from controller.schemas.output import TripOutputSchema
 from model.enum import PlaneEnum
@@ -19,7 +17,7 @@ router = APIRouter(prefix="/trips", tags=["Trip"])
 
 
 @dataclass
-class TripFilter:
+class TripFilter(BaseFilter):
     company__eq: int | None = Query(None, description="filter by company id", alias="company")
     company__in: list[int] | None = Query(None, description="filter by inclusion in company id list", alias="companies")
     plane__eq: PlaneEnum | None = Query(None, description="filter by plane", alias="plane")
@@ -39,19 +37,19 @@ class TripFilter:
 @router.get("", response_model=list[TripOutputSchema])
 async def get_trips(
     pagination: Pagination = Depends(page_size_pagination),
-    _filter: FilterHandler = Depends(make_filter_dependency(TripFilter)),
+    _filter: TripFilter = Depends(),
     service: TripCRUD = Depends(),
 ):
-    return await service.read(_filter, pagination)
+    return await service.read(_filter.make_filter_map(), pagination)
 
 
 @router.get("/count", response_model=int)
 async def get_trips_count(
     pagination: Pagination = Depends(page_size_pagination),
-    _filter: FilterHandler = Depends(make_filter_dependency(TripFilter)),
+    _filter: TripFilter = Depends(),
     service: TripCRUD = Depends(),
 ):
-    return len(await service.read(_filter, pagination))
+    return len(await service.read(_filter.make_filter_map(), pagination))
 
 
 @router.get("/{_id}", response_model=TripOutputSchema)

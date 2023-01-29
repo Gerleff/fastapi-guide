@@ -4,10 +4,8 @@ from fastapi import APIRouter, Depends, Query
 from starlette import status
 
 from controller.dependencies.auth import admin_only_permission
-from controller.dependencies.filter.base import FilterHandler
-from controller.dependencies.filter.depends import make_filter_dependency
-from controller.dependencies.pagination.base import Pagination
-from controller.dependencies.pagination.depends import page_size_pagination
+from controller.dependencies.filters import BaseFilter
+from controller.dependencies.pagination import Pagination, page_size_pagination
 from controller.schemas.input import CompanyInputSchema, CompanyUpdateSchema
 from controller.schemas.output import CompanyOutputSchema
 from model.services.crud.company import CompanyCRUD
@@ -16,7 +14,7 @@ router = APIRouter(prefix="/companies", tags=["Company"])
 
 
 @dataclass
-class CompanyFilter:
+class CompanyFilter(BaseFilter):
     id__eq: int | None = Query(None, description="filter by id", alias="id")
     id__in: list[int] | None = Query(None, description="filter by inclusion in id list", alias="ids")
     name__like: str | None = Query(None, description="filter by name", alias="name")
@@ -25,19 +23,19 @@ class CompanyFilter:
 @router.get("", response_model=list[CompanyOutputSchema])
 async def get_companies(
     pagination: Pagination = Depends(page_size_pagination),
-    _filter: FilterHandler = Depends(make_filter_dependency(CompanyFilter)),
+    _filter: CompanyFilter = Depends(),
     service: CompanyCRUD = Depends(),
 ):
-    return await service.read(_filter, pagination)
+    return await service.read(_filter.make_filter_map(), pagination)
 
 
 @router.get("/count", response_model=int)
 async def get_companies_count(
     pagination: Pagination = Depends(page_size_pagination),
-    _filter: FilterHandler = Depends(make_filter_dependency(CompanyFilter)),
+    _filter: CompanyFilter = Depends(),
     service: CompanyCRUD = Depends(),
 ):
-    return len(await service.read(_filter, pagination))
+    return len(await service.read(_filter.make_filter_map(), pagination))
 
 
 @router.get("/{_id}", response_model=CompanyOutputSchema)

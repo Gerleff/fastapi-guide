@@ -1,5 +1,7 @@
 from typing import Type, TypeVar
 
+from controller.dependencies.filters import filter_map_typing
+from controller.dependencies.pagination import Pagination
 from model.db_entities.models import BaseDBModel
 
 
@@ -11,7 +13,9 @@ class BaseDatabaseHandler:
 
     async def disconnect(self, settings): ...
 
-    async def select(self, model: Type[ModelVar], _filter, pagination) -> list[ModelVar]: ...
+    async def select(
+            self, model: Type[ModelVar], filter_map: filter_map_typing, pagination: Pagination
+    ) -> list[ModelVar]: ...
 
     async def select_by_id(self, model: Type[ModelVar], _id: int) -> ModelVar: ...
 

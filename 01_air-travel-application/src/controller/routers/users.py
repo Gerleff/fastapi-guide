@@ -5,10 +5,8 @@ from pydantic import constr
 from starlette import status
 
 from controller.dependencies.auth import admin_only_permission
-from controller.dependencies.filter.base import FilterHandler
-from controller.dependencies.filter.depends import make_filter_dependency
-from controller.dependencies.pagination.base import Pagination
-from controller.dependencies.pagination.depends import page_size_pagination
+from controller.dependencies.filters import BaseFilter
+from controller.dependencies.pagination import page_size_pagination, Pagination
 from controller.schemas.input import UserInputSchema, UserUpdateSchema
 from controller.schemas.output import UserOutputSchema
 from model.enum import UserRoleEnum
@@ -18,7 +16,7 @@ router = APIRouter(prefix="/users", tags=["User"])
 
 
 @dataclass
-class UserFilter:
+class UserFilter(BaseFilter):
     role__eq: UserRoleEnum | None = Query(None, description="filter by role", alias="role")
     role__in: list[UserRoleEnum] | None = Query(None, description="filter by inclusion in role list", alias="roles")
     name__like: constr(min_length=1, max_length=64) | None = Query(None, description="filter by name", alias="name")
@@ -27,19 +25,19 @@ class UserFilter:
 @router.get("", response_model=list[UserOutputSchema])
 async def get_users(
     pagination: Pagination = Depends(page_size_pagination),
-    _filter: FilterHandler = Depends(make_filter_dependency(UserFilter)),
+    _filter: UserFilter = Depends(),
     service: UserCRUD = Depends(),
 ):
-    return await service.read(_filter, pagination)
+    return await service.read(_filter.make_filter_map(), pagination)
 
 
 @router.get("/count", response_model=int)
 async def get_users_count(
     pagination: Pagination = Depends(page_size_pagination),
-    _filter: FilterHandler = Depends(make_filter_dependency(UserFilter)),
+    _filter: UserFilter = Depends(),
     service: UserCRUD = Depends(),
 ):
-    return len(await service.read(_filter, pagination))
+    return len(await service.read(_filter.make_filter_map(), pagination))
 
 
 @router.get("/{_id}", response_model=UserOutputSchema)

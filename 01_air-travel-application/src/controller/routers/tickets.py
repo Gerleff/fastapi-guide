@@ -4,10 +4,8 @@ from fastapi import APIRouter, Depends, Query
 from starlette import status
 
 from controller.dependencies.auth import admin_only_permission
-from controller.dependencies.filter.base import FilterHandler
-from controller.dependencies.filter.depends import make_filter_dependency
-from controller.dependencies.pagination.base import Pagination
-from controller.dependencies.pagination.depends import page_size_pagination
+from controller.dependencies.filters import BaseFilter
+from controller.dependencies.pagination import page_size_pagination, Pagination
 from controller.schemas.input import TicketInputSchema, TicketUpdateSchema
 from controller.schemas.output import TicketOutputSchema
 from model.services.crud.ticket import TicketCRUD
@@ -16,7 +14,7 @@ router = APIRouter(prefix="/tickets", tags=["Ticket"])
 
 
 @dataclass
-class TicketFilter:
+class TicketFilter(BaseFilter):
     trip__eq: int | None = Query(None, description="filter by trip id", alias="trip")
     trip__in: list[int] | None = Query(None, description="filter by inclusion in trip id list", alias="trips")
 
@@ -24,19 +22,19 @@ class TicketFilter:
 @router.get("", response_model=list[TicketOutputSchema])
 async def get_tickets(
     pagination: Pagination = Depends(page_size_pagination),
-    _filter: FilterHandler = Depends(make_filter_dependency(TicketFilter)),
+    _filter: TicketFilter = Depends(),
     service: TicketCRUD = Depends(),
 ):
-    return await service.read(_filter, pagination)
+    return await service.read(_filter.make_filter_map(), pagination)
 
 
 @router.get("/count", response_model=int)
 async def get_tickets_count(
     pagination: Pagination = Depends(page_size_pagination),
-    _filter: FilterHandler = Depends(make_filter_dependency(TicketFilter)),
+    _filter: TicketFilter = Depends(),
     service: TicketCRUD = Depends(),
 ):
-    return len(await service.read(_filter, pagination))
+    return len(await service.read(_filter.make_filter_map(), pagination))
 
 
 @router.get("/{_id}", response_model=TicketOutputSchema)

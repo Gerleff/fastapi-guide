@@ -1,7 +1,7 @@
 from typing import NoReturn
 
-from controller.dependencies.filter.base import FilterHandler
-from controller.dependencies.pagination.base import Pagination
+from controller.dependencies.filters import filter_map_typing
+from controller.dependencies.pagination import Pagination
 from model.db_entities.models import CompanyModel, TripModel
 from model.services.crud.base import CRUDInterface
 from model.services.dto import TripDTO
@@ -16,9 +16,9 @@ class TripCRUD(CRUDInterface):
         inserted_trip = await self.db_conn.insert(TripModel, data)
         return TripDTO.from_database(inserted_trip, company)
 
-    async def read(self, _filter: FilterHandler, pagination: Pagination) -> list[TripDTO]:
+    async def read(self, filter_map: filter_map_typing, pagination: Pagination) -> list[TripDTO]:
         result = []
-        for trip in await self.db_conn.select(TripModel, _filter, pagination):
+        for trip in await self.db_conn.select(TripModel, filter_map, pagination):
             result.append(TripDTO.from_database(trip, await self._get_company(trip.company)))
         return result
 

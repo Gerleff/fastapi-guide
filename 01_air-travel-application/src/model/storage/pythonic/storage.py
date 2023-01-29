@@ -5,11 +5,13 @@ from typing import Generic, Iterator, Protocol, Type
 from pydantic import BaseModel, Field, validator
 from pydantic.generics import GenericModel
 
-from controller.dependencies.filter.pythonic import PythonicFilterHandler
-from controller.dependencies.pagination.pythonic import PythonicPagination
+from controller.dependencies.filters import filter_map_typing
+from controller.dependencies.pagination import Pagination
+
 from model.db_entities.models import CompanyModel, PassInTripModel, TripModel, UserModel, BaseDBModel
 from model.storage.base import BaseDatabaseHandler, ModelVar
 from model.storage.exceptions import EntityNotFoundError
+from model.storage.pythonic.utils import filter_python_list, make_pagination_slice
 
 
 class GenericStorageList(GenericModel, Generic[ModelVar], arbitrary_types_allowed=True):
@@ -36,9 +38,9 @@ class GenericStorageList(GenericModel, Generic[ModelVar], arbitrary_types_allowe
     def __iter__(self) -> Iterator[ModelVar]:
         return self.__root__.__iter__()
 
-    def select(self, _filter: PythonicFilterHandler, pagination: PythonicPagination):
+    def select(self, filter_map: filter_map_typing, pagination: Pagination):
         """Simple equality filter implementation"""
-        return _filter.filter_python_list(self.__root__)[pagination.slice]
+        return filter_python_list(filter_map, self.__root__)[make_pagination_slice(pagination)]
 
     def select_by_id(self, _id: int) -> ModelVar:
         for elem_index in range(len(self.__root__)):
@@ -91,10 +93,10 @@ class StorageHandler(BaseDatabaseHandler):
                 file.write(self.storage.json(indent=4, ensure_ascii=False))
 
     async def select(
-        self, model: Type[BaseDBModel], _filter: PythonicFilterHandler, pagination: PythonicPagination
+        self, model: Type[BaseDBModel], filter_map: filter_map_typing, pagination: Pagination
     ) -> list[BaseDBModel]:
         pytonic_storage_list: GenericStorageList = getattr(self.storage, model.Meta.table)
-        return pytonic_storage_list.select(_filter, pagination)
+        return pytonic_storage_list.select(filter_map, pagination)
 
     async def select_by_id(self, model: Type[BaseDBModel], _id: int) -> BaseDBModel:
         pytonic_storage_list: GenericStorageList = getattr(self.storage, model.Meta.table)
