@@ -6,10 +6,17 @@ from model.enum import UserRoleEnum, PlaneEnum
 
 
 class BaseDBModel(BaseModel, orm_mode=True):
-    id: int | None = None  # Before storing in DB id = None
+    id: int
 
     class Meta:
         table = None
+
+
+class CompanyModel(BaseDBModel):
+    name: str
+
+    class Meta:
+        table = "companies"
 
 
 class TripModel(BaseDBModel):
@@ -22,13 +29,6 @@ class TripModel(BaseDBModel):
 
     class Meta:
         table = "trips"
-
-
-class CompanyModel(BaseDBModel):
-    name: str
-
-    class Meta:
-        table = "companies"
 
 
 class PassInTripModel(BaseDBModel):

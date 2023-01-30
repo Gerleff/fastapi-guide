@@ -12,7 +12,9 @@ class CompanyCRUD(CRUDInterface):
         return CompanyDTO.from_database(await self.db_conn.insert(CompanyModel, data))
 
     async def read(self, filter_map: filter_map_typing, pagination: Pagination) -> list[CompanyDTO]:
-        return [CompanyDTO.from_database(row) for row in await self.db_conn.select(CompanyModel, filter_map, pagination)]
+        return [
+            CompanyDTO.from_database(row) for row in await self.db_conn.select(CompanyModel, filter_map, pagination)
+        ]
 
     async def read_by_id(self, _id: int) -> CompanyDTO:
         return CompanyDTO.from_database(await self.db_conn.select_by_id(CompanyModel, _id))

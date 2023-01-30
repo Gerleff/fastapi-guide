@@ -1,38 +1,44 @@
+from typing import Collection, NamedTuple
+
 from fastapi import Security, Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from pydantic.dataclasses import dataclass
 from starlette import status
 
 from model.enum import UserRoleEnum
+from model.services.crud.user import UserCRUD
+from model.storage.exceptions import EntityNotFoundError
 
 
-@dataclass
-class AuthData:
+class AuthData(NamedTuple):
     id: int
     role: UserRoleEnum
 
 
-_description = "Primitive auth schema. Credential format: role:id"
+_description = "Primitive auth schema. Credential format: id"
 _auth_error = HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authenticated")
 
 
-def get_auth_data(security: HTTPAuthorizationCredentials = Security(HTTPBearer(description=_description))) -> AuthData:
-    role, _id = security.credentials.split(":")
-    return AuthData(id=_id, role=role)
+async def get_auth_data(
+    security: HTTPAuthorizationCredentials = Security(HTTPBearer(description=_description)),
+    user_service: UserCRUD = Depends(),
+) -> AuthData:
+    _id = security.credentials
+    try:
+        user_from_db = await user_service.read_by_id(int(_id))
+    except (ValueError, EntityNotFoundError) as error:
+        raise _auth_error from error
+
+    return AuthData(user_from_db.id, user_from_db.role)
 
 
-async def check_user_existence(auth_data: AuthData = Depends(get_auth_data)) -> AuthData:
-    # ToDO check in db_conn users existence
-    if "exists":
+def make_auth_dependency(allowed_roles: Collection[UserRoleEnum] = ()):
+    def auth_dependency(auth_data: AuthData = Depends(get_auth_data)):
+        if auth_data.role not in allowed_roles:
+            raise _auth_error
         return auth_data
-    raise _auth_error
+
+    return auth_dependency
 
 
-def auth_only_permission(auth_data: AuthData = Depends(check_user_existence)) -> AuthData:
-    return auth_data
-
-
-def admin_only_permission(auth_data: AuthData = Depends(check_user_existence)) -> AuthData:
-    if auth_data.role != UserRoleEnum.ADMIN:
-        raise _auth_error
-    return auth_data
+auth_only_permission = make_auth_dependency()
+admin_only_permission = make_auth_dependency((UserRoleEnum.ADMIN,))
