@@ -52,7 +52,7 @@ async def add_user(user_data: UserAdminInputSchema, service: UserCRUD = Depends(
 
 @router.patch("/{_id}", response_model=UserAdminOutputSchema)
 async def edit_user(_id: int, user_data: UserAdminUpdateSchema, service: UserCRUD = Depends()):
-    return await service.update_by_id(_id, user_data.dict())
+    return await service.update_by_id(_id, user_data.dict(exclude_none=True))
 
 
 @router.delete("/{_id}", status_code=status.HTTP_204_NO_CONTENT)

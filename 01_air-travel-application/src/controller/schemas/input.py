@@ -18,12 +18,12 @@ class TripInputSchema(BaseModel):
     time_out: datetime
     time_in: datetime
 
-    @validator("town_to")
+    @validator("town_to", allow_reuse=True)
     def check_town_pre(cls, value: str, values: dict):
         assert value != values["town_from"], "Trips to the same town shouldn't be planned"
         return value
 
-    @validator("time_in")
+    @validator("time_in", allow_reuse=True)
     def check_time(cls, value: datetime, values: dict):
         assert value > values["time_out"], "Time out must be lesser than time in"
         return value
@@ -37,7 +37,7 @@ class TicketProfileInputSchema(BaseModel):
 class TicketAdminInputSchema(BaseModel):
     place: constr(regex=r"^[A-F]\d\d$")
     trip: conint(gt=0)
-    user: conint(gt=0)
+    passenger: conint(gt=0)
 
 
 class UserProfileInputSchema(BaseModel):

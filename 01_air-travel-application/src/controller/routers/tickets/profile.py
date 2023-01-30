@@ -52,7 +52,7 @@ async def get_ticket(
     service: TicketCRUD = Depends(),
     user: AuthData = Depends(auth_only_permission),
 ):
-    return await service.read({"eq_": [("passenger", user.id)]})
+    return (await service.read({"eq_": [("passenger", user.id)]}))[0]
 
 
 @router.post("", status_code=status.HTTP_201_CREATED, response_model=TicketProfileOutputSchema)

@@ -54,7 +54,7 @@ async def add_company(
 async def edit_company(
     _id: int, company_data: CompanyUpdateSchema, service: CompanyCRUD = Depends(), __auth=Depends(admin_only_permission)
 ):
-    return await service.update_by_id(_id, company_data.dict())
+    return await service.update_by_id(_id, company_data.dict(exclude_none=True))
 
 
 @router.delete("/{_id}", status_code=status.HTTP_204_NO_CONTENT)

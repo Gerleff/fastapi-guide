@@ -49,7 +49,7 @@ async def add_ticket(ticket_data: TicketAdminInputSchema, service: TicketCRUD = 
 
 @router.patch("/{_id}", response_model=TicketAdminOutputSchema)
 async def edit_ticket(_id: int, ticket_data: TicketAdminUpdateSchema, service: TicketCRUD = Depends()):
-    return await service.update_by_id(_id, ticket_data.dict())
+    return await service.update_by_id(_id, ticket_data.dict(exclude_none=True))
 
 
 @router.delete("/{_id}", status_code=status.HTTP_204_NO_CONTENT)

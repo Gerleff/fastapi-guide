@@ -66,7 +66,7 @@ async def add_trip(trip_data: TripInputSchema, service: TripCRUD = Depends(), __
 async def edit_trip(
     _id: int, trip_data: TripUpdateSchema, service: TripCRUD = Depends(), __auth=Depends(admin_only_permission)
 ):
-    return await service.update_by_id(_id, trip_data.dict())
+    return await service.update_by_id(_id, trip_data.dict(exclude_none=True))
 
 
 @router.delete("/{_id}", status_code=status.HTTP_204_NO_CONTENT)

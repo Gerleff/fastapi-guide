@@ -18,7 +18,7 @@ async def add_user(
     service: UserCRUD = Depends(),
 ):
     new_user = await service.create(user_data.dict())
-    response.headers["UserId"] = new_user.id
+    response.headers["UserId"] = str(new_user.id)
     return new_user
 
 
@@ -34,7 +34,7 @@ async def get_user(
 async def edit_user(
     user_data: UserProfileUpdateSchema, service: UserCRUD = Depends(), user: AuthData = Depends(auth_only_permission)
 ):
-    return await service.update_by_id(user.id, user_data.dict())
+    return await service.update_by_id(user.id, user_data.dict(exclude_none=True))
 
 
 @router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)

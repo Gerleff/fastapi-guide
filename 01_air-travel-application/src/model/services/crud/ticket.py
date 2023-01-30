@@ -19,16 +19,20 @@ class TicketCRUD(CRUDInterface):
 
     async def create(self, data: dict) -> TicketDTO:
         trip = await self._get_trip(data["trip"])
+        user = await self._get_user(data["passenger"])
         company = await self._get_company(trip.company)
         inserted_ticket = await self.db_conn.insert(PassInTripModel, data)
-        return TicketDTO.from_database(inserted_ticket, trip, company)
+        return TicketDTO.from_database(inserted_ticket, trip, company, user)
 
     async def read(self, filter_map: filter_map_typing, pagination: Pagination = one_elem) -> list[TicketDTO]:
         result = []
         for ticket in await self.db_conn.select(PassInTripModel, filter_map, pagination):
             result.append(
                 TicketDTO.from_database(
-                    ticket, trip := await self._get_trip(ticket.trip), await self._get_company(trip.company)
+                    ticket,
+                    trip := await self._get_trip(ticket.trip),
+                    await self._get_company(trip.company),
+                    await self._get_user(ticket.passenger),
                 )
             )
         return result
@@ -36,7 +40,10 @@ class TicketCRUD(CRUDInterface):
     async def read_by_id(self, _id: int) -> TicketDTO:
         ticket = await self.db_conn.select_by_id(PassInTripModel, _id)
         return TicketDTO.from_database(
-            ticket, trip := await self._get_trip(ticket.trip), await self._get_company(trip.company)
+            ticket,
+            trip := await self._get_trip(ticket.trip),
+            await self._get_company(trip.company),
+            await self._get_user(ticket.passenger),
         )
 
     async def update_by_id(self, _id: int, data: dict) -> TicketDTO:
