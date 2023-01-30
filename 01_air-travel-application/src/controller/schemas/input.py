@@ -29,17 +29,29 @@ class TripInputSchema(BaseModel):
         return value
 
 
-class TicketInputSchema(BaseModel):
+class TicketProfileInputSchema(BaseModel):
     place: constr(regex=r"^[A-F]\d\d$")
     trip: conint(gt=0)
 
 
-class UserInputSchema(BaseModel):
+class TicketAdminInputSchema(BaseModel):
+    place: constr(regex=r"^[A-F]\d\d$")
+    trip: conint(gt=0)
+    user: conint(gt=0)
+
+
+class UserProfileInputSchema(BaseModel):
+    name: str
+
+
+class UserAdminInputSchema(BaseModel):
     role: UserRoleEnum
     name: str
 
 
 CompanyUpdateSchema = make_update_schema(CompanyInputSchema)
 TripUpdateSchema = make_update_schema(TripInputSchema)
-TicketUpdateSchema = make_update_schema(TicketInputSchema)
-UserUpdateSchema = make_update_schema(UserInputSchema)
+TicketProfileUpdateSchema = make_update_schema(TicketProfileInputSchema)
+UserProfileUpdateSchema = make_update_schema(UserProfileInputSchema)
+TicketAdminUpdateSchema = make_update_schema(TicketAdminInputSchema)
+UserAdminUpdateSchema = make_update_schema(UserAdminInputSchema)

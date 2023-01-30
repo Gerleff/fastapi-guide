@@ -99,23 +99,23 @@ class StorageHandler(BaseDatabaseHandler):
         return pytonic_storage_list.select(filter_map, pagination)
 
     async def select_by_id(self, model: Type[BaseDBModel], _id: int) -> BaseDBModel:
-        pytonic_storage_list: GenericStorageList = getattr(self.storage, model.Meta.table)
+        pytonic_storage_list: GenericStorageList = getattr(self.storage, table := model.Meta.table)
         if result := pytonic_storage_list.select_by_id(_id):
             return result
-        raise EntityNotFoundError(model, _id)
+        raise EntityNotFoundError(table, _id)
 
     async def insert(self, model: Type[BaseDBModel], value: dict) -> ModelVar:
         pytonic_storage_list: GenericStorageList = getattr(self.storage, model.Meta.table)
         return pytonic_storage_list.insert(model(id=pytonic_storage_list.next_id, **value))
 
     async def update_by_id(self, model: Type[BaseDBModel], _id: int, value: dict) -> ModelVar | None:
-        pytonic_storage_list: GenericStorageList = getattr(self.storage, model.Meta.table)
+        pytonic_storage_list: GenericStorageList = getattr(self.storage, table := model.Meta.table)
         if result := pytonic_storage_list.update(_id, value):
             return result
-        raise EntityNotFoundError(model, _id)
+        raise EntityNotFoundError(table, _id)
 
     async def delete_by_id(self, model: Type[BaseDBModel], _id: int) -> bool:
-        pytonic_storage_list: GenericStorageList = getattr(self.storage, model.Meta.table)
+        pytonic_storage_list: GenericStorageList = getattr(self.storage, table := model.Meta.table)
         if result := pytonic_storage_list.delete(_id):
             return result
-        raise EntityNotFoundError(model, _id)
+        raise EntityNotFoundError(table, _id)

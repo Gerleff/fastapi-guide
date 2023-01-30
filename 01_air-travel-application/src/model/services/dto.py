@@ -33,7 +33,7 @@ class UserDTO(BaseDTO):
 
 class TicketDTO(BaseDTO):
     trip: int | TripDTO
-    user: int | UserDTO | None
+    passenger: int | UserDTO | None
 
     @classmethod
     def from_database(
@@ -43,5 +43,5 @@ class TicketDTO(BaseDTO):
         dto = cls.parse_obj(ticket)
         dto.trip = trip_dto
         if user:
-            dto.user = UserDTO.from_database(user)
+            dto.passenger = UserDTO.from_database(user)
         return dto

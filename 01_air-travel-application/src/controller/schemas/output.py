@@ -20,13 +20,25 @@ class TripOutputSchema(BaseModel):
     time_in: datetime
 
 
-class TicketOutputSchema(BaseModel):
+class UserProfileOutputSchema(BaseModel):
+    role: UserRoleEnum
+    name: str
+
+
+class UserAdminOutputSchema(BaseModel):
+    id: int
+    role: UserRoleEnum
+    name: str
+
+
+class TicketProfileOutputSchema(BaseModel):
     id: int
     place: str
     trip: TripOutputSchema
 
 
-class UserOutputSchema(BaseModel):
+class TicketAdminOutputSchema(BaseModel):
     id: int
-    role: UserRoleEnum
-    name: str
+    place: str
+    trip: TripOutputSchema
+    passenger: UserAdminOutputSchema

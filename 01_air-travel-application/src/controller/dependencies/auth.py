@@ -1,4 +1,4 @@
-from typing import Collection, NamedTuple
+from typing import Collection, NamedTuple, Callable
 
 from fastapi import Security, Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -31,9 +31,9 @@ async def get_auth_data(
     return AuthData(user_from_db.id, user_from_db.role)
 
 
-def make_auth_dependency(allowed_roles: Collection[UserRoleEnum] = ()):
-    def auth_dependency(auth_data: AuthData = Depends(get_auth_data)):
-        if auth_data.role not in allowed_roles:
+def make_auth_dependency(allowed_roles: Collection[UserRoleEnum] = None) -> Callable[[AuthData], AuthData]:
+    def auth_dependency(auth_data: AuthData = Depends(get_auth_data)) -> AuthData:
+        if allowed_roles and auth_data.role not in allowed_roles:
             raise _auth_error
         return auth_data
 

@@ -7,13 +7,14 @@ from config.settings import DatabaseSettings
 from controller.dependencies.filters import filter_map_typing
 from controller.dependencies.pagination import Pagination
 from model.storage.base import BaseDatabaseHandler, ModelVar
+from model.storage.exceptions import EntityNotFoundError
 from model.storage.raw_sql.utils import make_sql_from_filter_map, make_pagination_sql, parse_db_record_into_model
 
 
 def make_insert_values_statement(table: str, data: dict) -> str:
-    insert_fields = tuple(data.keys())
-    insert_values = tuple(data.values())
-    return f"INSERT INTO {table} {insert_fields} VALUES {insert_values} RETURNING *"
+    insert_fields = ", ".join(data.keys())
+    insert_values = ", ".join(f"\"{value}\"" for value in data.values())
+    return f"INSERT INTO {table} ({insert_fields}) VALUES ({insert_values}) RETURNING *"
 
 
 def make_update_values_statement(table: str, data: dict, _id: int) -> str:
@@ -48,9 +49,10 @@ class SQLiteDBHandler(BaseDatabaseHandler):
         return [parse_db_record_into_model(row, model) for row in await self._fetch(sql_statement)]
 
     async def select_by_id(self, model: Type[ModelVar], _id: int) -> ModelVar:
-        sql_statement = f"SELECT * FROM {model.Meta.table} WHERE id = {_id}"
-        result = await self._fetch(sql_statement)
-        return parse_db_record_into_model(result[0], model)
+        sql_statement = f"SELECT * FROM {(table := model.Meta.table)} WHERE id = {_id}"
+        if result := await self._fetch(sql_statement):
+            return parse_db_record_into_model(result[0], model)
+        raise EntityNotFoundError(table, _id)
 
     async def insert(self, model: Type[ModelVar], value: dict) -> ModelVar:
         result = await self._fetch(make_insert_values_statement(model.Meta.table, value))
