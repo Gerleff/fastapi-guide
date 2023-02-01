@@ -9,6 +9,12 @@ web_app = FastAPI(docs_url="/")
 
 @web_app.get("/ping")  # Place debug breakpoint on the end of fastapi.routing.APIRouter.add_api_route() to inspect
 async def healthcheck():
+    """Healthcheck"""
+    return "pong"
+
+
+@web_app.get("/debug")  # Place debug breakpoint on the end of fastapi.routing.APIRouter.add_api_route() to inspect
+async def debug(a: int = 2, b: int = 2):
     """Place debug breakpoint on the end of func to inspect
     \f
     Request path from Uvicorn -> ASGI ->:
@@ -26,7 +32,7 @@ async def healthcheck():
             - fastapi.routing.serialize_response()
     """
     # import traceback; traceback.print_stack()  # Uncomment to check trace without debugger
-    return "pong"
+    return a * b
 
 
 class ASGIAppProtocol(Protocol):
@@ -71,4 +77,4 @@ class RouteProtocol(ASGIAppProtocol):
 
 
 if __name__ == "__main__":
-    uvicorn.run("__main__:web_app", host="localhost", port=8000, reload=True)
+    uvicorn.run("__main__:web_app", host="localhost", port=8000)
