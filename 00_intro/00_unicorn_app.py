@@ -4,20 +4,36 @@ import os
 import uvicorn
 import asyncio
 
+from fastapi.encoders import jsonable_encoder
 from starlette.types import ASGIApp, Scope, Receive, Send
 
 
-async def hello_world(scope: Scope, receive: Receive, send: Send):
-    """Simple showcase with pid"""
+async def echo(scope: Scope, receive: Receive, send: Send):
+    """Simple showcase"""
     event = await receive()
     print(f"{scope = }\n{event = }")
     await send(
         {
             "type": "http.response.start",
             "status": 200,
-            "headers": [
-                [b"content-type", b"text/plain"],
-            ],
+            "headers": [[b"content-type", b"text/plain"]],
+        }
+    )
+    await send(
+        {
+            "type": "http.response.body",
+            "body": event.get("body", b""),
+        }
+    )
+
+
+async def hello_world(scope: Scope, receive: Receive, send: Send):
+    """Hello world app"""
+    await send(
+        {
+            "type": "http.response.start",
+            "status": 200,
+            "headers": [[b"content-type", b"text/plain"]],
         }
     )
     await send(
@@ -37,12 +53,10 @@ async def slow_body(scope: Scope, receive: Receive, send: Send):
         {
             "type": "http.response.start",
             "status": 200,
-            "headers": [
-                [b"content-type", b"text/plain"],
-            ],
+            "headers": [[b"content-type", b"text/plain"]],
         }
     )
-    for chunk in (b"Slow", b", ", b"world!"):
+    for chunk in (b"Slow", b", ", b"world!", f"{os.getpid()}".encode('utf-8')):
         await send({"type": "http.response.body", "body": chunk, "more_body": True})
         await asyncio.sleep(1)
     await send(
@@ -68,6 +82,17 @@ app: ASGIApp
 
 if __name__ == "__main__":
     """
+    TLDR: uvicorn creates server, handling requests according provided ASGIApp.
+    
+    The main goal of uvicorn is to run asyncio.get_running_loop().create_server() 
+        with optimal and application's target oriented arguments.
+        The most defining arg is protocol fabric function -
+            on call it must return instance of child asyncio.Protocol class, which maintains application logic
+    Resulting server is powerful enough to handle requests according transferred ASGIApp and handle errors
+    All what is left for developer is 
+        to provide async app function according ASGI protocol and choose suitable server options 
+    
+    Deeps on launch uvicorn.run():
     1) construct uvicorn.config.Config  # Just preparation and storing configs
     2) choose run strategy (Reload, Multiprocess, "simple")
     3) do uvicorn.server.Server.run  # launcher and target for Processes
@@ -81,18 +106,21 @@ if __name__ == "__main__":
         a) do lifespan.startup  # make loaded_app.__call__, sending {'type': 'lifespan.startup'}
         b) make fabric create_protocol and pass it into asyncio.get_running_loop().create_server()
         created protocol also contains our loaded_app and ws_protocol 
-        c) tick
         
     On request, handled by h11_impl http protocol:
-    7) asyncio.selector_events._SelectorSocketTransport._read_ready__data_received -> self._protocol.data_received(data)
-    8) uvicorn.protocols.http.h11_impl.RequestResponseCycle.run_asgi
-    9) uvicorn.middleware.proxy_headers.ProxyHeadersMiddleware.__call__
-    10) app =)
+    1) asyncio.selector_events._SelectorSocketTransport._read_ready__data_received 
+            -> self._protocol.data_received(data)                            # using protocol data handling logic
+    2) uvicorn.protocols.http.h11_impl.RequestResponseCycle.run_asgi         # launch app
+    3) uvicorn.middleware.proxy_headers.ProxyHeadersMiddleware.__call__      # launch middleware before app
+    4) app =)                                                                # launch provided app(scope, receive, send)
+    5) uvicorn.protocols.http.h11_impl.RequestResponseCycle.receive          # call send callable to receive event data
+    6) uvicorn.protocols.http.h11_impl.RequestResponseCycle.send             # call send callable to send response
     """
     uvicorn.run(
-        "__main__:app",
+        "__main__:echo",
+        # "__main__:app",
         host="localhost",
         port=8000,
-        workers=3,
+        # workers=3,
         # reload=True
     )
