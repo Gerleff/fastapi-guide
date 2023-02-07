@@ -3,7 +3,7 @@ from asyncio import Transport
 from datetime import datetime
 
 
-class SimpleServerProtocol(asyncio.Protocol):
+class AbstractServerProtocol(asyncio.Protocol):
     def connection_made(self, transport: Transport):
         peername = transport.get_extra_info("peername")
         print("Connection from {}".format(peername))
@@ -25,14 +25,14 @@ class SimpleServerProtocol(asyncio.Protocol):
         raise NotImplementedError
 
 
-class EchoServerProtocol(SimpleServerProtocol):
+class EchoServerProtocol(AbstractServerProtocol):
     # Do not use Safari, use Mozilla
     def _send(self, data: bytes):
         self.transport.write(data)
         print("Send: {!r}".format(data))
 
 
-class HelloWorldServerProtocol(SimpleServerProtocol):
+class HelloWorldServerProtocol(AbstractServerProtocol):
     def _send(self, _):
         date_header = format(datetime.now(), "%a, %d %b %Y %H:%M:%S %Z").encode("utf-8")
         self.transport.write(b"HTTP/1.1 200 OK\r\ndate: " + date_header + b"\r\nserver: "
@@ -49,9 +49,9 @@ async def main():
     loop = asyncio.get_running_loop()
 
     server = await loop.create_server(
-        lambda: EchoServerProtocol(),
+        protocol_factory=lambda: EchoServerProtocol(),
         # lambda: HelloWorldServerProtocol(),
-        "127.0.0.1", 8000)
+        host="127.0.0.1", port=8000)
 
     async with server:
         await server.serve_forever()

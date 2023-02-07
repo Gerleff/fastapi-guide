@@ -1,10 +1,10 @@
 """Inspired by https://www.uvicorn.org/#quickstart"""
 import os
+from typing import Protocol
 
 import uvicorn
 import asyncio
 
-from fastapi.encoders import jsonable_encoder
 from starlette.types import ASGIApp, Scope, Receive, Send
 
 
@@ -78,6 +78,12 @@ async def app(scope: Scope, receive: Receive, send: Send):
 
 
 app: ASGIApp
+
+
+class ASGIAppProtocol(Protocol):
+    """Common ASGI Protocol"""
+    def __call__(self, scope: Scope, receive: Receive, send: Send):
+        ...
 
 
 if __name__ == "__main__":
