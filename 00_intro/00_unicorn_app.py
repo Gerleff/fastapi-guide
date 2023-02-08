@@ -82,7 +82,7 @@ app: ASGIApp
 
 class ASGIAppProtocol(Protocol):
     """Common ASGI Protocol"""
-    def __call__(self, scope: Scope, receive: Receive, send: Send):
+    async def __call__(self, scope: Scope, receive: Receive, send: Send):
         ...
 
 
