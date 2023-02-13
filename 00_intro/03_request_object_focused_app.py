@@ -2,8 +2,8 @@ from collections import defaultdict
 from enum import Enum
 from typing import Literal, Callable, Iterable
 
-from fastapi import FastAPI, Depends
 import uvicorn
+from fastapi import FastAPI, Depends
 from fastapi.params import Body
 from starlette.requests import Request
 from starlette.responses import Response

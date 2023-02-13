@@ -1,8 +1,8 @@
 import operator
+from typing import TypeVar, Generic, Iterator
 
 from pydantic import BaseModel, Field, validator, root_validator
 from pydantic.generics import GenericModel
-from typing import TypeVar, Generic, Iterator
 from src.models.schemas import CompanyOutputSchema, TripOutputSchema, TripForPassengerOutputSchema
 
 SchemaToStoreVar = TypeVar("SchemaToStoreVar", bound=BaseModel)

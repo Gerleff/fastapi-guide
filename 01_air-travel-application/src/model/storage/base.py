@@ -4,7 +4,6 @@ from controller.dependencies.filters import filter_map_typing
 from controller.dependencies.pagination import Pagination
 from model.db_entities.models import BaseDBModel
 
-
 ModelVar = TypeVar("ModelVar", bound=BaseDBModel)
 
 

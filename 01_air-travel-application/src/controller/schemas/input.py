@@ -2,8 +2,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, constr, conint, validator
 
-from .utils import make_update_schema
 from model.enum import PlaneEnum, UserRoleEnum
+from .utils import make_update_schema
 
 
 class CompanyInputSchema(BaseModel):

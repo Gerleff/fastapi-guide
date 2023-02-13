@@ -1,10 +1,9 @@
 """Inspired by https://www.uvicorn.org/#quickstart"""
+import asyncio
 import os
 from typing import Protocol
 
 import uvicorn
-import asyncio
-
 from starlette.types import ASGIApp, Scope, Receive, Send
 
 

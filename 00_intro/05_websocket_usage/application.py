@@ -6,15 +6,17 @@ from pathlib import Path
 
 import uvicorn
 from fastapi import FastAPI, WebSocket
-from starlette.requests import Request
-from starlette.websockets import WebSocketDisconnect
 from fastapi.templating import Jinja2Templates
+from starlette.requests import Request
+from starlette.staticfiles import StaticFiles
+from starlette.websockets import WebSocketDisconnect
 
+from service import generate_seat_map, order_seat, OrderError
 from settings import settings
-from service import generate_seat_map, parse_seat_map
 from simple_queue import AsyncFanoutQueue
 
 app = FastAPI()
+app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory=Path("templates"))
 
 
@@ -36,7 +38,7 @@ def shut_down():
 async def get_trip(request: Request, _id: int):
     seat_map = request.app.state.seat_maps[_id]
     return templates.TemplateResponse(
-        "seat_map.html", {"request": request, "id": _id, "settings": settings, "seat_map": parse_seat_map(seat_map)}
+        "seat_map.html", {"request": request, "id": _id, "settings": settings, "seat_map": seat_map}
     )
 
 
@@ -64,8 +66,11 @@ async def ep_websocket(trip_id: int, websocket: WebSocket):
         while websocket.app.state.running:
             message = await websocket.receive_json()
             if message["type"] == "order":
-                with suppress(KeyError):
-                    websocket.app.state.seat_maps[trip_id]["seat_map"][message["seat"]]["status"] = "Ordered"
+                try:
+                    order_seat(websocket.app.state.seat_maps[trip_id], message["seat"])
+                except OrderError as error:
+                    await websocket.send_json({"type": "error", "descr": str(error)})
+                else:
                     await fanout_queue.multicast({"type": "order", "seat": message["seat"], "trip_id": trip_id})
     except WebSocketDisconnect:
         closed = True

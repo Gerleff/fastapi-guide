@@ -1,8 +1,8 @@
 import os
-
-from fastapi import FastAPI
 from datetime import datetime
+
 import uvicorn
+from fastapi import FastAPI
 from starlette import status
 from starlette.requests import Request
 

@@ -1,5 +1,4 @@
-from pathlib import Path
-from typing import Type, Protocol, NoReturn, Literal
+from typing import Type, Protocol, NoReturn
 
 from fastapi import FastAPI
 from starlette.requests import Request

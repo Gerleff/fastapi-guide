@@ -1,10 +1,5 @@
-from fastapi import FastAPI, Depends, HTTPException
 import uvicorn
-from starlette import status
-from starlette.requests import Request
-
-from src.settings import settings
-from storage import Storage
+from fastapi import FastAPI, Depends, HTTPException
 from src.models.schemas import (
     CompanyOutputSchema,
     TripOutputSchema,
@@ -14,6 +9,11 @@ from src.models.schemas import (
     TripForPassengerInputSchema,
     PlaneEnum,
 )
+from src.settings import settings
+from starlette import status
+from starlette.requests import Request
+
+from storage import Storage
 
 app = FastAPI(docs_url="/", servers=[{"url": settings.ADDRESS, "description": "Local server"}])
 

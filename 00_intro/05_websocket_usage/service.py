@@ -1,6 +1,6 @@
-from collections import defaultdict
 from typing import NamedTuple
 
+from pydantic import BaseModel, constr
 
 STATUS_MAP = {
     "O": "Available",
@@ -10,50 +10,87 @@ STATUS_MAP = {
 }
 
 
+class OrderError(Exception):
+    ...
+
+
+class AlreadyOrderedError(OrderError):
+    def __init__(self, *args, **kwargs):
+        super().__init__("Seat is already oredered!")
+
+
+class NotFoundError(OrderError):
+    def __init__(self, *args, **kwargs):
+        super().__init__("Seat is not available")
+
+
 class Row(NamedTuple):
     num: int
     seats: str
 
 
+class SeatMapBlock(BaseModel):
+    label: str
+    literas: str
+    rows_range: constr(regex=r"\d{,2}-\d{,2}")
+    rows: list[Row]
+
+
+def order_seat(seat_map: list[SeatMapBlock], seat: str):
+    litera, row = seat[0], int(seat[1:])
+    for block in seat_map:
+        row_from, row_to = block.rows_range.split("-")
+        if int(row_from) <= row <= int(row_to):
+            for i, map_litera in enumerate(block.literas):
+                if litera == map_litera:
+                    for j, _row in enumerate(block.rows):
+                        if _row.num == row:
+                            if _row.seats[i] == "O":
+                                new_row = _row.seats[:i] + "$" + _row.seats[i+1:]
+                                block.rows[j] = Row(row, new_row)
+                                return
+                            if _row.seats[i] == "$":
+                                raise AlreadyOrderedError()
+    raise NotFoundError()
+
+
 def generate_seat_map(print_map: bool = False):
     # Based on https://www.ana.co.jp/ru/ru/travel-information/seat-map/b787-10/
-    literas = "ABCDEFGHJK"
-    eazy_print_map = {
-        "business_class": [
-            Row(1, "O_X____O_X"),
-            *(Row(_row, seats) for _row, seats in enumerate(["X_OXOXOX_O", "O_XOXOXO_X"] * 4, 2)),
-            Row(10, "X_OXOXOX_O"),
-        ],
-        "premium_economy": [Row(_row, "O_OO_OOO_O") for _row in range(15, 18)],
-        "economy_class": [
-            Row(20, "___O_OO___"),
-            *(Row(_row, "OOOO_OOOOO") for _row in range(21, 31)),
-            *(Row(_row, "OOO____OOO") for _row in range(31, 34)),
-            *(Row(_row, "OOOO_OOOOO") for _row in range(34, 47)),
-            Row(47, "O_OO_OOO_O"),
-        ]
-    }
+    seat_map = [
+        SeatMapBlock(
+            label="business_class",
+            literas="ACDEFGHK",
+            rows_range="1-10",
+            rows=[
+                Row(1, "OX____OX"),
+                *(Row(_row, seats) for _row, seats in enumerate(["XOXOXOXO", "OXOXOXOX"] * 4, 2)),
+                Row(10, "XOXOXOXO"),
+            ]
+        ),
+        SeatMapBlock(
+            label="premium_economy",
+            literas="ACDFGHK",
+            rows_range="15-18",
+            rows=[Row(_row, "OOOOOOO") for _row in range(15, 18)]
+        ),
+        SeatMapBlock(
+            label="economy_class",
+            literas="ABCDFGHJK",
+            rows_range="20-47",
+            rows=[
+                Row(20, "___OOO___"),
+                *(Row(_row, "OOOOOOOOO") for _row in range(21, 31)),
+                *(Row(_row, "OOO___OOO") for _row in range(31, 34)),
+                *(Row(_row, "OOOOOOOOO") for _row in range(34, 47)),
+                Row(47, "O_OOOOO_O"),
+            ]
+        )
+    ]
     if print_map:
-        print(literas)
-        for rank, rows in eazy_print_map.items():
-            print(rank)
-            for row in rows:
-                print(row.num, row.seats)
-    initial_seat_map = {}
-    for rank, rows in eazy_print_map.items():
-        for row in rows:
-            for i, seat in enumerate(row.seats):
-                if (status := STATUS_MAP[seat]) in ("Not available", "Not exist"):
-                    continue
-                seat_num = f"{literas[i]}{row.num}"
-                initial_seat_map[seat_num] = {"rank": rank, "status": status, "id": seat_num}
-    return {"seat_map": initial_seat_map, "literas": literas}
-
-
-def parse_seat_map(seat_map: dict):
-    literas, rows = list(seat_map["literas"]), defaultdict(lambda: [None] * len(literas))
-    for seat, data in seat_map["seat_map"].items():
-        litera, row = seat[0], seat[1:]
-        rows[row][literas.index(litera)] = data
-
-    return {"literas": literas, "rows": rows}
+        for block in seat_map:
+            print("=" * 10)
+            print(block.label)
+            print("x ", block.literas)
+            for row in block.rows:
+                print(row.num if row.num // 10 else f"0{row.num}", row.seats)
+    return seat_map

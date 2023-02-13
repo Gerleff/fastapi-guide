@@ -7,7 +7,6 @@ from pydantic.generics import GenericModel
 
 from controller.dependencies.filters import filter_map_typing
 from controller.dependencies.pagination import Pagination
-
 from model.db_entities.models import CompanyModel, PassInTripModel, TripModel, UserModel, BaseDBModel
 from model.storage.base import BaseDatabaseHandler, ModelVar
 from model.storage.exceptions import EntityNotFoundError

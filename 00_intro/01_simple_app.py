@@ -1,7 +1,7 @@
 from typing import Callable, Union, Protocol
 
-from fastapi import FastAPI
 import uvicorn
+from fastapi import FastAPI
 from starlette.types import Scope, Receive, Send
 
 web_app = FastAPI(docs_url="/")

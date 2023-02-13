@@ -2,34 +2,54 @@
 <html>
     <head>
         <title>WebSocket Seatmap</title>
+        <link href="{{ url_for('static', path='/style.css') }}" rel="stylesheet">
     </head>
     <body>
-        <h1>Trip {{id}}</h1>
-        <div>
-            <table>
-              <tr>
-                  <th>x</th>
-                  {% for litera in seat_map.literas %}
-                    <th>{{ litera }}</th>
-                  {% endfor %}
-              </tr>
-                {% for row_num, row in seat_map.rows.items() %}
+        <div class="wrapperTrip">
+            <h1>Trip {{id}}</h1>
+            {% for seat_map_block in seat_map %}
+            <div class="wrapperSeat">
+                <h3>{{ seat_map_block.label }}</h3>
+                <table>
                 <tr>
-                    <td><b>{{row_num}}</b></td>
-                    {% for seat in row %}
-                        {% if seat.status == 'Available'%} <td id="{{seat.id}}" class="seat" style="color:green">O</td>
-                        {% elif seat.status == 'Ordered'%} <td id="{{seat.id}}" class="seat" style="color:red"><b>$</b></td>
-                        {% else %} <td></td>
-                        {% endif %}
+                    <th>x</th>
+                    {% for litera in seat_map_block.literas %}
+                        <th>{{ litera }}</th>
                     {% endfor %}
                 </tr>
-                {% endfor %}
-            </table>
+                    {% for row in seat_map_block.rows %}
+                    <tr>
+                        <td><b>{{ row.num }}</b></td>
+                        {% for i in range(row.seats|length) %}
+                            {% if row.seats[i] == 'O'%}
+                                <td id="{{ seat_map_block.literas[i] }}{{ row.num }}"
+                                    class="seat"
+                                    style="color:green">
+                                    O
+                                </td>
+                            {% elif row.seats[i] == '$'%}
+                                <td id="{{ seat_map_block.literas[i] }}{{ row.num }}"
+                                    class="seat"
+                                    style="color:red">
+                                    <b>$</b>
+                                </td>
+                            {% else %}
+                                <td></td>
+                            {% endif %}
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+            {% endfor %}
         </div>
+
+        <h3>Order your seat now!</h3>
         <form action="" onsubmit="sendMessage(event)">
             <input type="text" id="messageText" autocomplete="off"/>
             <button>Order seat</button>
         </form>
+
         <ul id='messages'>
         </ul>
         <script>
@@ -45,6 +65,10 @@
                     console.log(seat);
                     seat.innerHTML = "<b>$</b>"
                     seat.style = "color:red"
+                }
+                else if (data["type"] == "error") {
+                    console.log("Received error");
+                    alert(data["descr"]);
                 }
             };
 
